@@ -4,7 +4,8 @@
   "description": "This is a custom Rust runtime specially created to work with nodejs, denojs and bunjs by Shyam. M",
   "main": "bundle.main.js",
   "scripts": {
-    "test": "npx vitest"
+    "test": "npx vitest",
+    "start": "node tester.js"
   },
   "keywords": [
     "#NodeJs",
