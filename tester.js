@@ -33,7 +33,7 @@ registerJsCallback(handleRequest);
 
 // Start the server; optionally specify host and port
 const PORT = process.env.PORT || 4000
-const HOST = process.env.HOST || "127.0.0.1"
+const HOST = process.env.HOST || "0.0.0.0"
 startServer(HOST, +PORT).then(() => {
     console.log("Rust HTTP server started");
 }).catch(console.error);
