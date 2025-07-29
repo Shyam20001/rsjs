@@ -1,0 +1,18 @@
+{
+  "name": "fire-and-forget",
+  "version": "1.0.0",
+  "description": "This is a custom Rust runtime specially created to work with nodejs, denojs and bunjs by Shyam. M",
+  "main": "bundle.main.js",
+  "scripts": {
+    "test": "npx vitest"
+  },
+  "keywords": [
+    "#NodeJs",
+    "#Rust",
+    "#Hyper",
+    "#BunJs",
+    "#DenoJs"
+  ],
+  "author": "Shyam20001",
+  "license": "ISC"
+}
