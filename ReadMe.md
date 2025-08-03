@@ -1,4 +1,5 @@
 # **Brahma-JS**
+
 ## 🌀 **Firelight Orchestrator**
 
 A blazing-fast, **fire-and-forget orchestrator** built with **Rust** and **JavaScript**, designed for ultra-low-latency task routing, message triggering, and lightweight logic execution — all without blocking.
@@ -24,28 +25,43 @@ A blazing-fast, **fire-and-forget orchestrator** built with **Rust** and **JavaS
 2. **Prepare your JavaScript logic file**
 
    ```js
-   const { registerJsCallback, startServer } = require("./reinforcements");
-
-   function handleRequest(_, body) {
-     if (body[0] === "/hi") {
-       return JSON.stringify({ status: "hello", ts: Date.now() });
-     }
-
-     return JSON.stringify({ error: "404 - Not Found" });
-   }
-
-   registerJsCallback(handleRequest);
-
-   startServer("127.0.0.1", 4000).then(() => {
-     console.log("Orchestrator started at http://127.0.0.1:4000");
-   });
+   const { useBrahma, startServer } = require("./reinforcements/brahma");
    ```
+
+useBrahma((req) => {
+if (req.path === "/hi") {
+return {
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ message: "Hello from /hi!" })
+};
+}
+
+    if (req.path === "/bye") {
+        return {
+            headers: { "Content-Type": "text/html" },
+            body: `<h1>Goodbye!</h1>`
+        };
+    }
+
+
+    return {
+        status: 404,
+        body: "Route not found"
+    };
+
+});
+
+startServer("127.0.0.1", 3000).then(() => {
+console.log("🌀 Brahma-JS server running at http://localhost:3000");
+});
+
+````
 
 3. **Run it with Node.js**
 
-   ```bash
-   node handler.js
-   ```
+```bash
+node handler.js
+````
 
 4. **Send HTTP requests**
 

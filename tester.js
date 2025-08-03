@@ -1,7 +1,6 @@
 const { useBrahma, startServer } = require('./reinforcements/brahma');
 
 useBrahma((req) => {
-   // console.log(JSON.stringify(req, null, 2), "<<<<")
     if (req.path === "/hi") {
         return {
             headers: { "Content-Type": "application/json" },
