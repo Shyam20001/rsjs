@@ -1,6 +1,11 @@
+const util = require('node:util')
 const { useBrahma, startServer } = require('./reinforcements/brahma');
+let dump = (obj) => util.inspect(obj, true, null, true)
 
 useBrahma((req) => {
+
+    // lets check and debub 
+    // console.log(dump(req))
     if (req.path === "/hi") {
         return {
             headers: { "Content-Type": "application/json" },
@@ -22,6 +27,6 @@ useBrahma((req) => {
     };
 });
 
-startServer("127.0.0.1", 3000).then(() => {
+startServer("0.0.0.0", 10000).then(() => {
     console.log("🌀 Brahma-JS server running at http://localhost:3000");
 });
