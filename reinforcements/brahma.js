@@ -1,7 +1,7 @@
 // Created by Shyam M (https://github.com/Shyam20001)
 // License: MIT
 
-const { registerJsCallback, startServer } = require('./index'); // or './index.node'
+const { registerJsCallback, startServer, parseFile } = require('./index'); // or './index.node'
 const { URLSearchParams } = require('url');
 
 /**
@@ -76,5 +76,6 @@ function normalizeResponse(res) {
 
 module.exports = {
   startServer,
-  useBrahma
+  useBrahma,
+  parseFile
 };
