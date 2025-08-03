@@ -85,6 +85,6 @@ port = process.env.PORT || 10000
 host = process.env.HOST || '0.0.0.0'
 
 
-startServer(host, port).then(() => {
+startServer(host, +port).then(() => {
     console.log(`🌀 Brahma-JS server running at http://${host}:${port}`);
 });
