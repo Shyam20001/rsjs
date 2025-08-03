@@ -1,39 +1,28 @@
-const { startServer, registerJsCallback } = require('./reinforcements/index');
+const { useBrahma, startServer } = require('./reinforcements/brahma');
 
-// Your JS async handler that Rust will call with (path, body)
-// Must return response string
-function handleRequest(path, body) {
-    // console.log(`Request came for path: ${body[1]} with body: ${body}`);
-
-    // Example: Just echo back some JSON
-
-    if (body[0] == "/hi") {
-        //  console.log(body[1], "data for /hi")
-        return JSON.stringify({
-            name: "poda punda",
-            body: body[3]
-        });
+useBrahma((req) => {
+   // console.log(JSON.stringify(req, null, 2), "<<<<")
+    if (req.path === "/hi") {
+        return {
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: "Hello from /hi!" })
+        };
     }
 
-    if (body[0] == "/bye") {
-        console.log(body, "data for /bye")
-        return JSON.stringify({
-            name: "poda sunni"
-        });
+    if (req.path === "/bye") {
+        return {
+            headers: { "Content-Type": "text/html" },
+            body: `<h1>Goodbye!</h1>`
+        };
     }
-    return JSON.stringify({
-        // receivedBody: body,
-        // reply: "Hello from JS!",
-        invalid: "404 - Not Found"
-    });
-}
 
-// Register the callback with Rust addon
-registerJsCallback(handleRequest);
 
-// Start the server; optionally specify host and port
-const PORT = process.env.PORT || 4000
-const HOST = process.env.HOST || "0.0.0.0"
-startServer(HOST, +PORT).then(() => {
-    console.log("Rust HTTP server started");
-}).catch(console.error);
+    return {
+        status: 404,
+        body: "Route not found"
+    };
+});
+
+startServer("127.0.0.1", 3000).then(() => {
+    console.log("🌀 Brahma-JS server running at http://localhost:3000");
+});
