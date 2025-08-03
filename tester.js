@@ -80,6 +80,11 @@ useBrahma((req) => {
     };
 });
 
-startServer("0.0.0.0", 10000).then(() => {
-    console.log("🌀 Brahma-JS server running at http://localhost:10000");
+let port, host
+port = process.env.PORT || 10000
+host = process.env.HOST || '0.0.0.0'
+
+
+startServer(host, port).then(() => {
+    console.log(`🌀 Brahma-JS server running at http://${host}:${port}`);
 });
