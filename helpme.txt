@@ -1,0 +1,56 @@
+Yes, if you want to use `p-limit` (the simplest and safest way to control async concurrency in Node.js), you'll need to install it via npm:
+
+---
+
+### ✅ Install `p-limit`:
+
+```bash
+npm install p-limit
+```
+
+Or globally (not usually recommended for libraries):
+
+```bash
+npm install -g p-limit
+```
+
+---
+
+### 🔍 What is `p-limit`?
+
+* A lightweight NPM package from the `sindresorhus` ecosystem
+* Limits how many promises run in parallel
+* Works great for "fire-and-forget with a safety net"
+
+---
+
+### 💡 Example with `p-limit` (after install):
+
+```js
+const fs = require('fs/promises');
+const path = require('path');
+const pLimit = require('p-limit');
+
+const limit = pLimit(50); // Max 50 concurrent writes
+let fileCounter = 1;
+
+const fireAndForgetWriteFile = async (data) => {
+    const filename = `test${fileCounter++}.txt`;
+    const content = `Timestamp: ${new Date().toISOString()}\nData: ${JSON.stringify(data)}`;
+    const filePath = path.join(__dirname, 'test', filename);
+
+    // Launch with limit — no await needed here
+    limit(async () => {
+        try {
+            await fs.writeFile(filePath, content, 'utf8');
+            console.log(`✅ Wrote ${filename}`);
+        } catch (err) {
+            console.error(`❌ Failed to write ${filename}:`, err.message);
+        }
+    })();
+};
+```
+
+---
+
+Let me know if you want a version that doesn't need external packages — I can build a custom concurrency limiter too.

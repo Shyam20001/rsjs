@@ -38,12 +38,36 @@
 // });
 
 const util = require('node:util');
-const { useBrahma, startServer, parseFile } = require('./reinforcements/brahma');
-const fs = require('node:fs'); // Use sync API instead of promises
+const { useBrahma, startServer, redirect, parseFile } = require('./reinforcements/brahma');
+const fs = require('node:fs/promises'); // Use sync API instead of promises
+const path = require('node:path')
 
-let dump = (obj) => util.inspect(obj, true, null, true);
+//let dump = (obj) => util.inspect(obj, true, null, true);
 
-useBrahma((req) => {
+let fileCounter = 1;
+
+// ✅ async arrow function, but fire-and-forget
+
+const fireAndForgetWriteFile = async (data) => {
+    const dir = path.join(__dirname, 'test');
+    const filename = `test${fileCounter++}.txt`;
+    const filepath = path.join(dir, filename);
+    const content = `Timestamp: ${new Date().toISOString()}\nData: ${JSON.stringify(data)}`;
+
+    try {
+        // Ensure the "test" directory exists
+        await fs.mkdir(dir, { recursive: true });
+
+        // Write the file into the "test" directory
+        await fs.writeFile(filepath, content, 'utf8');
+
+        //  console.log(`✅ File created: ${filepath}`);
+    } catch (err) {
+        console.error(`❌ Failed to write ${filename}:`, err.message);
+    }
+};
+
+useBrahma(async (req) => {
     if (req.path === "/hi") {
         let summa;
         try {
@@ -67,11 +91,7 @@ useBrahma((req) => {
     }
 
     if (req.path === "/bye") {
-        return {
-            headers: { "Content-Type": "text/html" },
-            status: 201,
-            body: `<h1>Goodbye!</h1>`
-        };
+        return redirect("https://example.com"); // Clean and readable
     }
 
     return {
