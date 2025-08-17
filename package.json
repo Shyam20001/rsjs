@@ -8,12 +8,12 @@
     "start": "node tester.js"
   },
   "keywords": [
-    "#NodeJs",
-    "#Rust",
-    "#Hyper",
-    "#BunJs",
-    "#DenoJs"
+    "NodeJs",
+    "Rust",
+    "Hyper",
+    "BunJs",
+    "DenoJs"
   ],
   "author": "Shyam20001",
-  "license": "ISC"
+  "license": "MIT"
 }
