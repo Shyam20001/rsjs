@@ -146,7 +146,7 @@ autocannon -c 100 -d 10 -p 10 http://127.0.0.1:3000/hi
 
 ## 🔐 License
 
-Released under the [ISC License](./LICENSE).
+Released under the [MIT License](./LICENSE).
 
 ---
 
