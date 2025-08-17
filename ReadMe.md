@@ -1,4 +1,3 @@
-
 ---
 
 # 🌀 **Brahma-JS**
@@ -13,15 +12,16 @@ A blazing-fast, **fire-and-forget orchestrator** built with **Rust** and **JavaS
 
 ## ⚡ What It Is
 
-* High-throughput async HTTP server (`tokio` + `hyper`)
-* JS-based request handler via embedded Rust runtime
-* Supports **dynamic routing**, **custom logic**, and **cached data workflows**
-* Use as a:
+- High-throughput async HTTP server (`tokio` + `hyper`)
+- JS-based request handler via embedded Rust runtime
+- Supports **dynamic routing**, **custom logic**, and **cached data workflows**
+- Use as a:
 
-  * **Message router**
-  * **Webhook fan-out hub**
-  * **API orchestrator**
-* Ships as a **binary** — no build setup or source required
+  - **Message router**
+  - **Webhook fan-out hub**
+  - **API orchestrator**
+
+- Ships as a **binary** — no build setup or source required
 
 ---
 
@@ -30,8 +30,8 @@ A blazing-fast, **fire-and-forget orchestrator** built with **Rust** and **JavaS
 ### 1. Clone this repository
 
 ```bash
-git clone <your-repo-url>
-cd brahma-js
+git clone -b master https://github.com/Shyam20001/rsjs.git
+cd rsjs
 ```
 
 ### 2. Prepare your JavaScript logic
@@ -42,28 +42,28 @@ Create a `handler.js` file:
 const { useBrahma, startServer } = require("./reinforcements/brahma");
 
 useBrahma((req) => {
-    if (req.path === "/hi") {
-        return {
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: "Hello from /hi!" })
-        };
-    }
-
-    if (req.path === "/bye") {
-        return {
-            headers: { "Content-Type": "text/html" },
-            body: `<h1>Goodbye!</h1>`
-        };
-    }
-
+  if (req.path === "/hi") {
     return {
-        status: 404,
-        body: "Route not found"
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "Hello from /hi!" }),
     };
+  }
+
+  if (req.path === "/bye") {
+    return {
+      headers: { "Content-Type": "text/html" },
+      body: `<h1>Goodbye!</h1>`,
+    };
+  }
+
+  return {
+    status: 404,
+    body: "Route not found",
+  };
 });
 
 startServer("127.0.0.1", 3000).then(() => {
-    console.log("🌀 Brahma-JS server running at http://localhost:3000");
+  console.log("🌀 Brahma-JS server running at http://localhost:3000");
 });
 ```
 
@@ -83,27 +83,27 @@ curl http://127.0.0.1:3000/hi
 
 ## 🧠 Features
 
-* 🔥 **Fire-and-forget**: Rust doesn't wait for JS logic — just executes and moves on
-* ⚡ **Ultra-fast**: 60K+ RPS with 24KB responses
-* 🧬 **Dynamic logic**: Update JS without touching the binary
-* 🛠️ **Simple**: 1 binary, 1 JS file, and you're live
+- 🔥 **Fire-and-forget**: Rust doesn't wait for JS logic — just executes and moves on
+- ⚡ **Ultra-fast**: 60K+ RPS with 24KB responses
+- 🧬 **Dynamic logic**: Update JS without touching the binary
+- 🛠️ **Simple**: 1 binary, 1 JS file, and you're live
 
 ---
 
 ## 💼 Use Cases
 
-* Microservice message orchestration
-* Edge compute/local automation controller
-* Webhook router or API multiplexer
-* Replace Redis queues or Express for internal patterns
+- Microservice message orchestration
+- Edge compute/local automation controller
+- Webhook router or API multiplexer
+- Replace Redis queues or Express for internal patterns
 
 ---
 
 ## 🛡️ Notes
 
-* Minimal validation — ensure JS safely handles request input (`body[]`, etc.)
-* Logic **must be synchronous** — **no `await`** in `handleRequest`
-* Designed for **trusted internal environments** (not public-facing)
+- Minimal validation — ensure JS safely handles request input (`body[]`, etc.)
+- Logic **must be synchronous** — **no `await`** in `handleRequest`
+- Designed for **trusted internal environments** (not public-facing)
 
 ---
 
@@ -127,16 +127,16 @@ autocannon -c 100 -d 10 -p 10 http://127.0.0.1:3000/hi
 
 ## 🧩 Integration Ideas
 
-* Connect external brokers (e.g., Kafka, NATS) into the HTTP logic
-* Use as a smart, JS-controlled router for service meshes
-* Bundle multiple `handler.js` versions for isolated behaviors
+- Connect external brokers (e.g., Kafka, NATS) into the HTTP logic
+- Use as a smart, JS-controlled router for service meshes
+- Bundle multiple `handler.js` versions for isolated behaviors
 
 ---
 
 ## 🔐 Licensing & Distribution
 
-* This project is **binary-only** and **not open source**
-* Redistribution or reverse engineering is **prohibited** without written consent
+- This project is **binary-only** and **not open source**
+- Redistribution or reverse engineering is **prohibited** without written consent
 
 ---
 
