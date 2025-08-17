@@ -145,5 +145,3 @@ autocannon -c 100 -d 10 -p 10 http://127.0.0.1:3000/hi
 **Email**: [mshayam41@gmail.com](mailto:mshayam41@gmail.com)
 
 ---
-
-Let me know if you’d like this exported as a `.md` file or need branding/styling tweaks (like badges, logos, or TOC).
