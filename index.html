@@ -41,11 +41,14 @@
         }
 
         img {
-            max-width: 100%;
+            max-width: 600px;
+            width: 100%;
+            height: auto;
             margin: 1rem 0;
             border: 1px solid #ddd;
             border-radius: 8px;
             transition: transform 0.2s ease;
+            display: block;
         }
 
         img:hover {
@@ -84,6 +87,71 @@
             font-size: 0.95em;
         }
 
+        .cta-card {
+            text-align: center;
+            border: 2px solid var(--accent);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-card pre {
+            background: #b21d02;
+            color: #000000;
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            margin: 1rem auto;
+            /* <-- centers the block horizontally */
+            display: block;
+            /* <-- make it a block element */
+            width: fit-content;
+            /* <-- ensures it shrinks to content width */
+        }
+
+
+        .cta-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #4a90e2, #00c6ff);
+            color: #fff;
+            padding: 0.7rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 0.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 144, 255, 0.3);
+        }
+
+        .cta-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 18px rgba(0, 144, 255, 0.45);
+        }
+
+        /* Shine Effect */
+        .cta-btn::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -75%;
+            width: 50%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.4);
+            transform: skewX(-25deg);
+        }
+
+        .cta-btn:hover::before {
+            animation: shine 0.9s forwards;
+        }
+
+        @keyframes shine {
+            100% {
+                left: 125%;
+            }
+        }
+
+
         footer {
             text-align: center;
             font-size: 0.85em;
@@ -118,17 +186,18 @@
 
     <p>
         Surprisingly, <strong>Express</strong> ended up as the lowest performing candidate, while
-        <strong>Fastify</strong> was slightly better. <strong>Brahma-JS</strong> and <strong>uWS</strong> were in a same
-        league.
+        <strong>Fastify</strong> was slightly better. <strong>Brahma-JS</strong> performed impressively, though
+        <strong>uWS</strong> remained the fastest overall.
     </p>
 
     <hr>
 
     <div class="framework">
-        <h2>📦 Express.js</h2>
+        <h2>🐇 Express.js</h2>
         <p><strong>Git:</strong> <a class="git-link" href="https://github.com/expressjs/express"
                 target="_blank">https://github.com/expressjs/express</a></p>
         <p>Express is well known for its simplicity, but it's not optimized for high concurrency or raw performance.</p>
+        <p><strong>📊 Results:</strong> <b>54k requests</b>, <b>~3k failed (timeouts)</b></p>
         <img src="assets/express-js-screenshot.png" alt="Express-JS Screenshot">
     </div>
 
@@ -136,8 +205,8 @@
         <h2>⚡ Fastify</h2>
         <p><strong>Git:</strong> <a class="git-link" href="https://github.com/fastify/fastify"
                 target="_blank">https://github.com/fastify/fastify</a></p>
-        <p>Fastify is a performance-focused alternative to Express. It showed a decent improvement, but still fell short
-            of the top contenders.</p>
+        <p>Fastify is a performance-focused alternative to Express. It showed a solid improvement over Express.</p>
+        <p><strong>📊 Results:</strong> <b>307k requests</b></p>
         <img src="assets/fastify-js-scrennshot.png" alt="Fastify-JS Screenshot">
     </div>
 
@@ -146,15 +215,16 @@
         <p><strong>Git:</strong> <a class="git-link" href="https://github.com/Shyam20001/rsjs"
                 target="_blank">https://github.com/Shyam20001/rsjs</a></p>
         <p>Brahma-JS is my own minimalist, high-performance Node.js framework. It uses a lean architecture and async
-            primitives. It performed impressively, rivaling even uWS.</p>
+            primitives. It performed impressively, close to uWS.</p>
         <div class="highlight-box">
             <strong>🔧 Runtime & Design:</strong><br>
             • Core runtime powered by <code>Rust Tokio</code> (async runtime) + <code>Hyper</code> (HTTP engine)<br>
-            • Bound to Node.js via <code>napi-rs</code> for seamless JS callbacks<br>
+            • Bound to Node.js via <b>But also can be used in Deno as well as Bun.</b>
             • Binary-only distribution — no need to compile or manage dependencies<br>
             • Designed as a “fire-and-forget” orchestrator with ultra-fast message routing<br>
             • API surface aims to feel like <code>Express/Hono</code> while staying minimal
         </div>
+        <p><strong>📊 Results:</strong> <b>413k requests</b></p>
         <img src="assets/brahma-js-screenshot.png" alt="Brahma-JS Screenshot">
     </div>
 
@@ -164,6 +234,7 @@
                 target="_blank">https://github.com/uNetworking/uWebSockets.js</a></p>
         <p>uWS is known for being one of the fastest web frameworks out there — built in C++ with Node.js bindings. Its
             performance remains stellar, though its ergonomics aren’t as friendly as others.</p>
+        <p><strong>📊 Results:</strong> <b>456k requests</b></p>
         <img src="assets/ultra-websockets-screenshot.png" alt="Ultra WebSockets Screenshot">
     </div>
 
@@ -171,9 +242,10 @@
 
     <h2>📊 Summary</h2>
     <ul>
-        <li><strong>1st Place (tie):</strong> uWS and Brahma-JS</li>
-        <li><strong>2nd:</strong> Fastify</li>
-        <li><strong>3rd:</strong> Express</li>
+        <li><strong>1st Place:</strong> uWS (456k requests)</li>
+        <li><strong>2nd:</strong> Brahma-JS (413k requests)</li>
+        <li><strong>3rd:</strong> Fastify (307k requests)</li>
+        <li><strong>4th:</strong> Express (54k requests, 3k failures)</li>
     </ul>
 
     <p>
@@ -181,6 +253,17 @@
         minimal overhead in frameworks like Brahma-JS or uWS can bring massive benefits in constrained environments like
         <code>t2.micro</code>.
     </p>
+    <div class="framework cta-card">
+        <h2>🔥 Try Brahma-JS Right Now</h2>
+        <p>
+            Get started instantly with the NPM package:
+        </p>
+        <pre><code>npm i brahma-firelight</code></pre>
+        <a href="https://www.npmjs.com/package/brahma-firelight" target="_blank" class="cta-btn">
+            🌟 Explore on NPM
+        </a>
+    </div>
+
 
     <p>
         Drop a star on the <a href="https://github.com/Shyam20001/rsjs" target="_blank">Brahma-JS GitHub repo</a> if
