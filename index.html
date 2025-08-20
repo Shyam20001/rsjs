@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Benchmarking Node.js Frameworks – Brahma-JS vs uWS vs Fastify vs Express</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --accent: #4a90e2;
+            --bg-light: #f9f9f9;
+            --card-bg: #fff;
+            --text-main: #333;
+            --text-dark: #222;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 2rem;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--text-dark);
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        code {
+            background: #eee;
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+
+        img {
+            max-width: 100%;
+            margin: 1rem 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            transition: transform 0.2s ease;
+        }
+
+        img:hover {
+            transform: scale(1.02);
+        }
+
+        .framework {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .framework:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .git-link {
+            font-size: 0.9em;
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .git-link:hover {
+            text-decoration: underline;
+        }
+
+        .highlight-box {
+            background: #f0f6ff;
+            border-left: 4px solid var(--accent);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔬 Node.js Framework Benchmark – August 2025</h1>
+    <p>
+        Recently, I conducted a performance benchmark on four backend frameworks — <strong>Express</strong>,
+        <strong>Fastify</strong>, <strong>Brahma-JS</strong> (my own creation), and <strong>uWebSockets.js
+            (uws-js)</strong>. The tests were conducted using <code>autocannon</code> directly against each
+        live-deployed API on a minimal <strong>EC2 t2.micro</strong> instance.
+    </p>
+
+    <div class="highlight-box">
+        <strong>⚙️ Benchmark Setup:</strong><br>
+        • <code>autocannon</code> is a Node.js-based HTTP benchmarking tool, similar to <code>wrk</code>, designed to
+        generate high levels of concurrent requests.<br>
+        • Client-side load was generated with:<br>
+        &nbsp;&nbsp;– <strong>Connections:</strong> 100<br>
+        &nbsp;&nbsp;– <strong>Duration:</strong> 10s per test<br>
+        &nbsp;&nbsp;– <strong>Pipelining:</strong> 50<br>
+        &nbsp;&nbsp;– <strong>Workers:</strong> 2<br>
+        • Server environment: <strong>AWS EC2 t2.micro</strong> (1 vCPU, 1 GB RAM, EBS-backed SSD).<br>
+        • Since this instance has only a single CPU core (burstable), enabling clustering offers no advantage — all
+        benchmarks were run in a single-process mode.
+    </div>
+
+    <p>
+        Surprisingly, <strong>Express</strong> ended up as the lowest performing candidate, while
+        <strong>Fastify</strong> was slightly better. <strong>Brahma-JS</strong> and <strong>uWS</strong> were in a same
+        league.
+    </p>
+
+    <hr>
+
+    <div class="framework">
+        <h2>📦 Express.js</h2>
+        <p><strong>Git:</strong> <a class="git-link" href="https://github.com/expressjs/express"
+                target="_blank">https://github.com/expressjs/express</a></p>
+        <p>Express is well known for its simplicity, but it's not optimized for high concurrency or raw performance.</p>
+        <img src="assets/express-js-screenshot.png" alt="Express-JS Screenshot">
+    </div>
+
+    <div class="framework">
+        <h2>⚡ Fastify</h2>
+        <p><strong>Git:</strong> <a class="git-link" href="https://github.com/fastify/fastify"
+                target="_blank">https://github.com/fastify/fastify</a></p>
+        <p>Fastify is a performance-focused alternative to Express. It showed a decent improvement, but still fell short
+            of the top contenders.</p>
+        <img src="assets/fastify-js-scrennshot.png" alt="Fastify-JS Screenshot">
+    </div>
+
+    <div class="framework">
+        <h2>🌀 Brahma-JS (Custom Framework)</h2>
+        <p><strong>Git:</strong> <a class="git-link" href="https://github.com/Shyam20001/rsjs"
+                target="_blank">https://github.com/Shyam20001/rsjs</a></p>
+        <p>Brahma-JS is my own minimalist, high-performance Node.js framework. It uses a lean architecture and async
+            primitives. It performed impressively, rivaling even uWS.</p>
+        <div class="highlight-box">
+            <strong>🔧 Runtime & Design:</strong><br>
+            • Core runtime powered by <code>Rust Tokio</code> (async runtime) + <code>Hyper</code> (HTTP engine)<br>
+            • Bound to Node.js via <code>napi-rs</code> for seamless JS callbacks<br>
+            • Binary-only distribution — no need to compile or manage dependencies<br>
+            • Designed as a “fire-and-forget” orchestrator with ultra-fast message routing<br>
+            • API surface aims to feel like <code>Express/Hono</code> while staying minimal
+        </div>
+        <img src="assets/brahma-js-screenshot.png" alt="Brahma-JS Screenshot">
+    </div>
+
+    <div class="framework">
+        <h2>🚀 uWebSockets.js (uws-js)</h2>
+        <p><strong>Git:</strong> <a class="git-link" href="https://github.com/uNetworking/uWebSockets.js"
+                target="_blank">https://github.com/uNetworking/uWebSockets.js</a></p>
+        <p>uWS is known for being one of the fastest web frameworks out there — built in C++ with Node.js bindings. Its
+            performance remains stellar, though its ergonomics aren’t as friendly as others.</p>
+        <img src="assets/ultra-websockets-screenshot.png" alt="Ultra WebSockets Screenshot">
+    </div>
+
+    <hr>
+
+    <h2>📊 Summary</h2>
+    <ul>
+        <li><strong>1st Place (tie):</strong> uWS and Brahma-JS</li>
+        <li><strong>2nd:</strong> Fastify</li>
+        <li><strong>3rd:</strong> Express</li>
+    </ul>
+
+    <p>
+        This test proves that raw performance isn’t always about using the most popular tool — thoughtful design and
+        minimal overhead in frameworks like Brahma-JS or uWS can bring massive benefits in constrained environments like
+        <code>t2.micro</code>.
+    </p>
+
+    <p>
+        Drop a star on the <a href="https://github.com/Shyam20001/rsjs" target="_blank">Brahma-JS GitHub repo</a> if
+        you're curious about its design or want to try it out!
+    </p>
+
+    <footer>
+        <p>Published: August 2025</p>
+    </footer>
+</body>
+
+</html>
