@@ -1,0 +1,24 @@
+{
+  "name": "brahma-firelight",
+  "version": "2.0.0",
+  "description": "A blazing-fast, fire-and-forget orchestrator built with Rust and JavaScript, designed for ultra-low-latency task routing, message triggering, and heavyweight logic execution — all without blocking. A native rust AddOn for NodeJS, BunJS and DenoJS.",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "keywords": [
+    "simd",
+    "simd-json",
+    "json",
+    "node",
+    "rust",
+    "middleware",
+    "server",
+    "bun",
+    "deno"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shyam20001/rsjs.git"
+  },
+  "author": "Shyam20001",
+  "license": "MIT"
+}
