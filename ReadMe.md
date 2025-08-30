@@ -20,6 +20,7 @@
 ```bash
 npm install brahma-firelight@latest
 ```
+
 ````
 
 ---
@@ -129,3 +130,4 @@ process.on("SIGINT", async () => {
 ## 🧾 License
 
 **MIT** © [LICENSE](https://github.com/Shyam20001/rsjs/blob/master/LICENSE)
+````
