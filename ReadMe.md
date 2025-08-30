@@ -1,6 +1,5 @@
 # <span style="display:inline-block; transform: scaleX(-1);">🗿</span> Brahma-JS (v2)
 
-
 <p align="center">
   <a href="https://www.npmjs.com/package/brahma-firelight">
     <img src="https://img.shields.io/npm/v/brahma-firelight" alt="npm version">
@@ -171,6 +170,10 @@ process.on("SIGINT", async () => {
 
 Explore performance breakdowns and comparisons here:
 [https://shyam20001.github.io/rsjs/](https://shyam20001.github.io/rsjs/)
+
+---
+
+👉 See the [**v2 branch README**](https://github.com/Shyam20001/rsjs/tree/v2) for installation, examples, and benchmarks.
 
 ---
 
