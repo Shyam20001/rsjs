@@ -1,4 +1,3 @@
-````markdown
 # 🌀 BRAHMA-JS v2
 
 [![npm version](https://img.shields.io/npm/v/brahma-firelight)](https://www.npmjs.com/package/brahma-firelight)
