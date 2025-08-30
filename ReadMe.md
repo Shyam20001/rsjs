@@ -1,8 +1,15 @@
 # 🌀 BRAHMA-JS v2
 
-[![npm version](https://img.shields.io/npm/v/brahma-firelight)](https://www.npmjs.com/package/brahma-firelight)
-![Node.js](https://img.shields.io/badge/Node.js-14%2B-brightgreen?logo=node.js) ![Rust](https://img.shields.io/badge/Rust-1.0+-black?logo=rust)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<p align="center">
+  <a href="https://www.npmjs.com/package/brahma-firelight">
+    <img src="https://img.shields.io/npm/v/brahma-firelight" alt="npm version">
+  </a>
+  <img src="https://img.shields.io/badge/Node.js-16%2B-brightgreen?logo=node.js" alt="Node.js">
+  <img src="https://img.shields.io/badge/Rust-1.70%2B-black?logo=rust" alt="Rust">
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
+  </a>
+</p>
 
 **Ultra-fast Orchestrator for Node.js** — now with **middleware, async/sync handlers, and SIMD JSON** powered by Rust.
 
@@ -20,8 +27,6 @@
 ```bash
 npm install brahma-firelight@latest
 ```
-
-````
 
 ---
 
@@ -53,9 +58,9 @@ app.listen(3000).then(() => {
 - Native Rust backend for throughput & low latency
 - Middleware support (`app.use`)
 - Async + sync handlers
-- SIMD JSON parser (Rust-powered, can parse largest blobs natively)
+- SIMD JSON parser (Rust-powered, can parse large blobs natively)
 - Familiar API (`get`, `post`, `put`, `delete`)
-- Runs on Node.js 16+
+- Runs on Node.js **16+**
 
 ---
 
@@ -130,4 +135,4 @@ process.on("SIGINT", async () => {
 ## 🧾 License
 
 **MIT** © [LICENSE](https://github.com/Shyam20001/rsjs/blob/master/LICENSE)
-````
+ 
