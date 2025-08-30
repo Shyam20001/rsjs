@@ -1,9 +1,8 @@
 ````markdown
 # 🌀 BRAHMA-JS v2
 
-[![npm version](https://img.shields.io/npm/v/brahma-firelight.svg)](https://www.npmjs.com/package/brahma-firelight)
-![Node.js](https://img.shields.io/badge/Node.js-16%2B-brightgreen?logo=node.js)
-![Rust](https://img.shields.io/badge/Rust-1.70%2B-black?logo=rust)
+[![npm version](https://img.shields.io/npm/v/brahma-firelight)](https://www.npmjs.com/package/brahma-firelight)
+![Node.js](https://img.shields.io/badge/Node.js-14%2B-brightgreen?logo=node.js) ![Rust](https://img.shields.io/badge/Rust-1.0+-black?logo=rust)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Ultra-fast Orchestrator for Node.js** — now with **middleware, async/sync handlers, and SIMD JSON** powered by Rust.
