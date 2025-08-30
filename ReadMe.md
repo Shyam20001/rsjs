@@ -1,4 +1,5 @@
-# 🌀 Brahma-JS v2
+# <span style="display:inline-block; transform: scaleX(-1);">🗿</span> Brahma-JS (v2)
+
 
 <p align="center">
   <a href="https://www.npmjs.com/package/brahma-firelight">
@@ -72,7 +73,7 @@ app.listen(3000).then(() => {
 
 ---
 
-## Familiar API, Supercharged Backend
+## Familiar API, Turbo-Charged ⚡ Backend
 
 Just like Express:
 
@@ -86,7 +87,7 @@ But under the hood:
 
 - Execution occurs in Rust (Tokio + Hyper).
 - Handlers (sync or async) run without sacrificing speed.
-- Middleware works seamlessly — same developer experience, turbocharged engine.
+- Middleware works seamlessly — same developer experience, turbo-charged engine.
 
 ---
 
@@ -137,6 +138,13 @@ app.get("/delay", async (req, res) => {
   await new Promise((r) => setTimeout(r, 200));
   res.json({ elapsed: Date.now() - req.startTime });
 });
+```
+
+### Rust's Native Parser
+
+```js
+const { parseFile } = require("brahma-firelight");
+console.log(parseFile("./test.txt")); // outputs Read Contents as String.
 ```
 
 ### Graceful Shutdown
