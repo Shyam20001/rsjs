@@ -1,4 +1,4 @@
-# 🌀 BRAHMA-JS v2
+# 🌀 Brahma-JS v2
 
 <p align="center">
   <a href="https://www.npmjs.com/package/brahma-firelight">
