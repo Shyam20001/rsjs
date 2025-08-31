@@ -1,6 +1,6 @@
-// // Created by Shyam M (https://github.com/Shyam20001)
-// // License: MIT
-// // BrahmaJS — Ultra-fast Node.js framework powered by Rust (via NAPI-RS)
+// Created by Shyam M (https://github.com/Shyam20001)
+// License: MIT
+// BrahmaJS — Ultra-fast Node.js framework powered by Rust (via NAPI-RS)
 
 const {
   startServer,
@@ -8,15 +8,13 @@ const {
   respond,
   shutdownServer,
   parseFile,
-  parseJsonSimd // optional, may not exist in build
+  parseJsonSimd
 } = require("./brahma");
 
 const fs = require("fs");
 const path = require("path");
 
-/**
- * HTTP Response wrapper (Express-like).
- */
+/** ---------------- Response ---------------- */
 class Response {
   constructor(reqId) {
     this.reqId = reqId;
@@ -25,54 +23,35 @@ class Response {
     this.sent = false;
   }
 
-  /** Set HTTP status code */
   status(code) { this.statusCode = code; return this; }
-
-  /** Set a header (Express-style) */
   set(field, value) { this.headers[field] = value; return this; }
-
-  /** Set a header (Node.js alias) */
   setHeader(field, value) { return this.set(field, value); }
 
-  /** Send JSON response */
   json(obj, status) {
     if (status) this.statusCode = status;
     this.headers["Content-Type"] = "application/json";
     this.send(JSON.stringify(obj));
   }
 
-  /** Send plain text response */
   text(str, status) {
     if (status) this.statusCode = status;
     this.headers["Content-Type"] = "text/plain";
     this.send(str);
   }
 
-  /** Send HTML response */
   html(html, status) {
     if (status) this.statusCode = status;
     this.headers["Content-Type"] = "text/html";
     this.send(html);
   }
 
-  /** Redirect to another URL */
   redirect(url, status = 302) {
     this.statusCode = status;
     this.headers["Location"] = url;
     this.send("");
   }
 
-  /** Send a file (base64 encoded) */
-  file(filePath, status) {
-    if (status) this.statusCode = status;
-    const absPath = path.resolve(filePath);
-    const content = fs.readFileSync(absPath);
-    this.headers["Content-Type"] =
-      this.headers["Content-Type"] || "application/octet-stream";
-    this.send(content.toString("base64"), true);
-  }
 
-  /** Send raw/string body */
   send(body, raw = false) {
     if (this.sent) return;
     this.sent = true;
@@ -88,9 +67,7 @@ class Response {
   }
 }
 
-/**
- * HTTP Request wrapper.
- */
+/** ---------------- Request ---------------- */
 class Request {
   constructor(reqId, method, path, query, headers, rawBody, params, originalUrl) {
     this.id = reqId;
@@ -106,7 +83,6 @@ class Request {
     this._parsedBody = null;
   }
 
-  /** Lazy parse body (JSON.parse once on demand) */
   get body() {
     if (this._parsedBody === null) {
       try {
@@ -118,7 +94,11 @@ class Request {
     return this._parsedBody;
   }
 
-  /** SIMD JSON parsing for extremely large payload (Rust accelerated) */
+  raw() {
+    return Buffer.from(this._rawBody || "");
+  }
+
+
   simdjson() {
     if (typeof parseJsonSimd !== "function") {
       throw new Error("SIMD JSON not available in this build");
@@ -130,16 +110,13 @@ class Request {
   }
 }
 
-/**
- * Main BrahmaJS application.
- */
+/** ---------------- App ---------------- */
 class BrahmaApp {
   constructor() {
     this.routes = [];
     this.middlewares = [];
   }
 
-  /** Register global middleware */
   use(fn) { this.middlewares.push(fn); }
   addRoute(method, routePath, handler) {
     this.routes.push({ method, routePath, handler });
@@ -182,13 +159,10 @@ class BrahmaApp {
     if (!res.sent) await handler(req, res);
   }
 
-  /** Start HTTP server */
   async listen(port = 3000, host = "0.0.0.0") {
     registerJsCallback((_, args) => {
-      const [reqIdRaw, path, queryStr, headersJson, rawBody] =
-        Array.isArray(args) ? args : [];
+      const [reqId, path, queryStr, headersJson, rawBody] = args;
 
-      const reqId = reqIdRaw.toString();
       const headers = JSON.parse(headersJson || "{}");
       const method = headers[":method"] || (rawBody ? "POST" : "GET");
 
@@ -217,24 +191,26 @@ class BrahmaApp {
         fullPath
       );
 
-      try {
-        if (this.middlewares.length === 0) {
-          routeMatch.handler(req, res);
-        } else {
-          this.runMiddleware(req, res, routeMatch.handler);
+      (async () => {
+        try {
+          if (this.middlewares.length === 0) {
+            await routeMatch.handler(req, res);
+          } else {
+            await this.runMiddleware(req, res, routeMatch.handler);
+          }
+          if (!res.sent) res.status(204).send("");
+        } catch (err) {
+          if (!res.sent) res.status(500).text("Internal Server Error");
         }
-      } catch (err) {
-        if (!res.sent) res.status(500).text("Internal Server Error");
-      }
+      })();
     });
 
+
     await startServer(host, port);
-    console.log(`🚀 BrahmaJS AUTO running at http://${host}:${port}`);
+    console.log(`🚀 BrahmaJS running at http://${host}:${port}`);
   }
 
-  /** Shut down the server */
   async shutdown() { await shutdownServer(); }
 }
-
 
 module.exports = { BrahmaApp, parseFile };
