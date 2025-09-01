@@ -159,9 +159,8 @@ registerJsCallback(async (_, args) => {
 });
 
 // ---------- start ----------
-startServer('0.0.0.0', 2000)
-  .then(() => console.log('Rust HTTP server started on http://0.0.0.0:3000'))
-  .catch((e) => { console.error('Failed to start server:', e); process.exit(1); });
+startServer('0.0.0.0', 2000, 'multi-core')
+
 
 // ---------- graceful shutdown ----------
 let shuttingDown = false;
