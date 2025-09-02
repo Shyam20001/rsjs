@@ -1,8 +1,8 @@
 // FINAL 08242025 Async Support 
-let summaId 
+let summaId
 
 // tester.js
-const { startServer, registerJsCallback, respond, shutdownServer, parseFile } = require('./index');
+const { startServer, registerJsCallback, respond, shutdownServer, parseFile, registerRustHandler } = require('./index');
 //setStaticDir(require('path').join(__dirname, '08092025'));
 
 // ---------- utils ----------
@@ -27,6 +27,8 @@ async function runLongJob(id, payload) {
     jobs.set(id, { status: 'error', error: String(e?.message || e) });
   }
 }
+// "json" mode: Rust will parse JSON body and echo it back as JSON
+registerRustHandler('/rust-json', 'json');
 
 // ---------- router (async) ----------
 async function route({ method, path, query, headers, body }) {
@@ -37,11 +39,11 @@ async function route({ method, path, query, headers, body }) {
   // 1) trivial async
   if (path === '/hi') {
     //   console.log(method, path, query, headers, body)
-    // await sleep(2000); // simulate I/O
+     await sleep(2000); // simulate I/O
     return {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'poda punda', summaId}),
+      body: JSON.stringify({ name: 'poda punda', summaId }),
     };
   }
 
@@ -159,7 +161,7 @@ registerJsCallback(async (_, args) => {
 });
 
 // ---------- start ----------
-startServer('0.0.0.0', 2000, 'single-core')
+startServer('0.0.0.0', 2000, 'multi-core')
 
 
 // ---------- graceful shutdown ----------
