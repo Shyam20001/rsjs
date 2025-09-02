@@ -159,7 +159,7 @@ registerJsCallback(async (_, args) => {
 });
 
 // ---------- start ----------
-startServer('0.0.0.0', 2000, 'multi-core')
+startServer('0.0.0.0', 2000, 'single-core')
 
 
 // ---------- graceful shutdown ----------

@@ -6,8 +6,10 @@ export declare function parseJsonSimd(input: string): any
 
 export declare function registerJsCallback(callback: ((err: Error | null, arg0: string, arg1: string, arg2: string, arg3: string, arg4: string) => string)): void
 
-export declare function respond(reqId: string, payload: string): void
+export declare function registerRustHandler(path: string, mode: string): void
+
+export declare function respond(reqId: string, payload: string): Promise<void>
 
 export declare function shutdownServer(): Promise<void>
 
-export declare function startServer(host?: string | undefined | null, port?: number | undefined | null): Promise<void>
+export declare function startServer(host?: string | undefined | null, port?: number | undefined | null, flavour?: string | undefined | null): void
