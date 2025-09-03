@@ -28,7 +28,24 @@ async function runLongJob(id, payload) {
   }
 }
 // "json" mode: Rust will parse JSON body and echo it back as JSON
-registerRustHandler('/rust-json', 'json');
+registerRustHandler('/rust-json', 'json');   //v2 stable
+
+// Register a Rust-native handler for /hiii
+// registerRustHandler("/hiii", (reqJson, ctxJson) => {
+//   const req = JSON.parse(reqJson);
+//   const ctx = JSON.parse(ctxJson);
+
+//   console.log("Rust-native handler request:", reqJson, ctxJson);
+
+//   // Must return a JSON string, not an object!
+//   return JSON.stringify({
+//     status: 200,
+//     headers: { "Content-Type": "text/plain" },
+//     body: "Hello from Rust-native handler!"
+//   });
+// });
+
+
 
 // ---------- router (async) ----------
 async function route({ method, path, query, headers, body }) {
@@ -39,7 +56,7 @@ async function route({ method, path, query, headers, body }) {
   // 1) trivial async
   if (path === '/hi') {
     //   console.log(method, path, query, headers, body)
-     await sleep(2000); // simulate I/O
+   // await sleep(2000); // simulate I/O
     return {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
@@ -161,7 +178,7 @@ registerJsCallback(async (_, args) => {
 });
 
 // ---------- start ----------
-startServer('0.0.0.0', 2000, 'multi-core')
+startServer('0.0.0.0', 2000, 'single-core')
 
 
 // ---------- graceful shutdown ----------
