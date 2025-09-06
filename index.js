@@ -393,10 +393,6 @@ if (!nativeBinding) {
 }
 
 module.exports = nativeBinding
-module.exports.parseFile = nativeBinding.parseFile
-module.exports.parseJsonSimd = nativeBinding.parseJsonSimd
 module.exports.registerJsCallback = nativeBinding.registerJsCallback
-module.exports.registerRustHandler = nativeBinding.registerRustHandler
 module.exports.respond = nativeBinding.respond
-module.exports.shutdownServer = nativeBinding.shutdownServer
 module.exports.startServer = nativeBinding.startServer
