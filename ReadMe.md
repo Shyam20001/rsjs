@@ -1,4 +1,4 @@
-# <span style="display:inline-block; transform: scaleX(-1);">🗿</span> Brahma-JS
+# <span style="display:inline-block; transform: scaleX(-1);">🗿</span> Brahma-JS (brahma-firelight)
 
 <p align="center">
   <a href="https://www.npmjs.com/package/brahma-firelight">
@@ -15,8 +15,6 @@
 
 Brahma-JS is an ultra-low-latency orchestrator for JS, blending familiar `Express`-style middleware and routing with a high-performance core built in Rust. Ideal for micro-service and API use-cases where speed matters.
 
-> **Currently in beta — source is private, but benchmarks and early feedback welcome!**
-
 ---
 
 ## The Vision: Why Brahma-JS?
@@ -30,31 +28,81 @@ Brahma-JS is an ultra-low-latency orchestrator for JS, blending familiar `Expres
 
 ## Performance Benchmarks
 
-On an AWS `t2.micro` (1 vCPU, 1 GB RAM), using `autocannon` (100 connections, pipelining 50, 10 s duration):
+Benchmarks were run with **wrk** on an Intel® Core™ i5-12450H (12 vCPUs available under virtualization, 200 concurrent connections, 10s duration):
 
-| Framework          | Requests (10s) | Notes                             |
-| ------------------ | -------------- | --------------------------------- |
-| **uWebSockets.js** | **456k**       | C++ core, fastest overall         |
-| **Brahma-JS**      | **413k**       | Rust-powered — impressively close |
-| Fastify            | 307k           | High-performance JS framework     |
-| Express.js         | 54k\*          | 3k backlogged/failures            |
+**wrk output (Brahma-JS):**
 
-\*Express fell significantly behind, with thousands of failed requests. :contentReference[oaicite:1]{index=1}
+```
 
-**Takeaway**: Brahma-JS delivers near-uWS levels of performance with a developer-friendly design.
+Running 10s test @ [http://127.0.0.1:2000/hi](http://127.0.0.1:2000/hi)
+1 threads and 200 connections
+Thread Stats   Avg      Stdev     Max   +/- Stdev
+Latency     1.51ms  479.16us   7.89ms   78.17%
+Req/Sec   131.57k     9.13k  146.78k    79.00%
+1309338 requests in 10.00s, 186.05MB read
+Requests/sec: 130899.58
+Transfer/sec: 18.60MB
+
+```
+
+**Takeaway:** Brahma-JS sustains **130k+ requests/sec** with low latency, powered by its Rust core and Express-style developer API.
 
 ---
+
+### 🔬 How to Reproduce
+
+1. **Start Brahma-JS server:**
+
+```bash
+node server.js
+# server listens on 0.0.0.0:2000
+```
+
+2. **Run wrk against the `/hi` endpoint:**
+
+```bash
+wrk http://127.0.0.1:2000/hi -d 10 -t 1 -c 200
+```
+
+- `-d 10` → run for 10 seconds
+- `-t 1` → 1 worker thread
+- `-c 200` → 200 concurrent connections
+
+3. **Test machine info (`lscpu`):**
+
+```
+Architecture:           x86_64
+CPU(s):                 12
+Model name:             12th Gen Intel(R) Core(TM) i5-12450H
+Threads per core:       2
+Cores per socket:       6
+Virtualization:         Microsoft Hyper-V (full)
+```
 
 ## Quick Start
 
 ```bash
-npm install brahma-firelight@latest
+npm install brahma-firelight
+# or
+yarn add brahma-firelight
+# or
+pnpm add brahma-firelight
+# or
+bun add brahma-firelight
+# or
+nypm add brahma-firelight
+
 ```
 
 ```js
 const { createApp } = require("brahma-firelight");
 
 const app = createApp();
+
+// utils.js
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 app.get("/hi", (req, res) => {
   res.json({ message: "Hello World from Brahma-JS!" });
@@ -70,8 +118,20 @@ app.get("/time", async (req) => {
   };
 });
 
+// To send HTML response
+app.get("/page", (req, res) => {
+  res.html(`<h1>Hello HTML</h1><p>Served by Brahma-JS id: ${req.reqId}</p>`);
+});
+
+// to return body no overhead very fast as text
 app.post("/json", (req, res) => {
   res.text(req.body);
+});
+
+app.post("/submit", (req, res) => {
+  let formData = JSON.parse(req.body);
+  console.log("bodyData:", formData);
+  res.json(formData, 200); // return the JSON response with http-status-code
 });
 
 app.get("/redirect", (req, res) => {
@@ -139,12 +199,17 @@ app.get("/delay", async (req, res) => {
 
 ---
 
-## Learn More & Benchmarks
+## Platform binaries / Prebuilds
 
-Explore performance breakdowns and comparisons here:
-[https://shyam20001.github.io/rsjs/](https://shyam20001.github.io/rsjs/)
+Brahma-Firelight ships prebuilt native binaries for macOS, Linux and Windows so you don't need to compile the native addon locally.
 
----
+**Supported artifact filenames (what the JS loader will try to load):**
+
+- macOS (Apple Silicon): `brahma-js.darwin-arm64.node`
+- macOS (Intel x64): `brahma-js.darwin-x64.node`
+- Linux (x64, GNU): `brahma-js.linux-x64-gnu.node`
+- Linux (arm64, GNU): `brahma-js.linux-arm64-gnu.node`
+- Windows (x64, MSVC): `brahma-js.win32-x64-msvc.node`
 
 👉 Forked from Brahma-Core. an open source repository [**Brahma-Core**](https://github.com/Shyam20001/brahma-core.git).
 

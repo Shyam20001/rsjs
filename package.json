@@ -1,6 +1,6 @@
 {
   "name": "brahma-firelight",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "A blazing-fast, fire-and-forget orchestrator built with Rust and JavaScript, designed for ultra-low-latency task routing, message triggering, and heavyweight logic execution — all without blocking. A native Rust AddOn for NodeJS, BunJS and DenoJS.",
   "main": "index.js",
   "types": "index.d.ts",
