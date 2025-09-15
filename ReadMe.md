@@ -113,7 +113,7 @@ app.get("/time", async (req) => {
   await sleep(20000);
   return {
     status: 400,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },         // Custom Returns 
     body: JSON.stringify({ now: Date.now() }),
   };
 });
@@ -131,7 +131,7 @@ app.post("/json", (req, res) => {
 app.post("/submit", (req, res) => {
   let formData = JSON.parse(req.body);
   console.log("bodyData:", formData);
-  res.json(formData, 200); // return the JSON response with http-status-code
+  res.json(formData, 201); // return the JSON response with http-status-code
 });
 
 app.get("/redirect", (req, res) => {
@@ -211,7 +211,7 @@ Brahma-Firelight ships prebuilt native binaries for macOS, Linux and Windows so 
 - Linux (arm64, GNU): `brahma-js.linux-arm64-gnu.node`
 - Windows (x64, MSVC): `brahma-js.win32-x64-msvc.node`
 
-👉 Forked from Brahma-Core. an open source repository [**Brahma-Core**](https://github.com/Shyam20001/brahma-core.git).
+👉 Forked from Brahma-Core. An open source repository [**Brahma-Core**](https://github.com/Shyam20001/brahma-core.git).
 
 ---
 
