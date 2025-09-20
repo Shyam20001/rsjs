@@ -1,6 +1,10 @@
 // Created by Shyam M (https://github.com/Shyam20001)
 // License: MIT
 // BrahmaJS — Ultra-fast Node.js framework powered by Rust (via NAPI-RS)
+// brahma-createApp-rawparts.js
+// Minimal changes from your original createApp; attachNative now expects (err, rawParts)
+// rawParts: [ reqId, path, method, query, headersJson, body, ip, cookiesJson, metaJson ]
+
 
 const { startServer, registerJsCallback, respond } = require('./brahma'); // native addon
 const { URLSearchParams } = require('url');
@@ -167,33 +171,69 @@ function createApp() {
     if (nativeRegistered) return;
     nativeRegistered = true;
 
-    // NEW: single-JSON-string handler (matches optimized Rust)
-    registerJsCallback((err, payloadStr) => {
-      // N-API callback signature expects a string return; return '' at the end.
-      if (err) {
-        console.error('Native error in callback:', err);
+    // N-API / napi-rs style: callback signature is (err, rawParts)
+    // rawParts is expected to be an array with the 9-tuple:
+    // [ reqId, path, method, query, headersJson, body, ip, cookiesJson, metaJson ]
+    registerJsCallback((_, rawParts) => {
+      // Return empty string per napi-rs expectation
+      if (!rawParts || !Array.isArray(rawParts)) {
+        // nothing to do
         return '';
       }
-      if (!payloadStr) return '';
 
-      let parsedReq;
+      // Destructure tuple with safe fallbacks
+      const [
+        reqIdRaw,
+        pathRaw,
+        methodRaw,
+        rawQueryRaw,
+        headersJsonRaw,
+        bodyRaw,
+        ipRaw,
+        cookiesJsonRaw,
+        metaJsonRaw
+      ] = rawParts;
+
+      const reqId = reqIdRaw != null ? String(reqIdRaw) : '';
+      const path = pathRaw ?? '/';
+      const method = (methodRaw ?? 'GET').toString().toUpperCase();
+      const rawQuery = rawQueryRaw ?? '';
+
+      // headersJsonRaw may be array-of-pairs or an object or a stringified JSON — try to parse only when string
+      let headersRaw = headersJsonRaw;
       try {
-        parsedReq = JSON.parse(payloadStr);
+        if (typeof headersJsonRaw === 'string' && headersJsonRaw.length > 0) {
+          headersRaw = JSON.parse(headersJsonRaw);
+        }
       } catch (e) {
-        console.warn('Failed to parse request payload from native:', e, 'raw:', String(payloadStr).slice(0, 200));
-        return '';
+        headersRaw = [];
       }
 
-      // extract fields with fallbacks (for compatibility)
-      const reqId = parsedReq.id ?? parsedReq.reqId ?? '';
-      const path = parsedReq.path ?? '/';
-      const method = (parsedReq.method ?? 'GET').toUpperCase();
-      const rawQuery = parsedReq.query ?? '';
-      const headersRaw = parsedReq.headers ?? parsedReq.headers_json ?? [];
-      const body = parsedReq.body ?? '';
-      const ip = parsedReq.ip ?? '';
-      const cookiesObj = parsedReq.cookies ?? parsedReq.cookies_json ?? {};
-      const meta = parsedReq.meta ?? {};
+      // body as-is (string expected from native tuple)
+      const body = bodyRaw ?? '';
+
+      // ip
+      const ip = ipRaw ?? '';
+
+      // cookies: may be string or object
+      let cookiesObj = cookiesJsonRaw;
+      try {
+        if (typeof cookiesJsonRaw === 'string' && cookiesJsonRaw.length > 0) {
+          cookiesObj = JSON.parse(cookiesJsonRaw);
+        }
+      } catch (e) {
+        cookiesObj = {};
+      }
+
+      // meta: may be string or object
+      let meta = metaJsonRaw;
+      try {
+        if (typeof metaJsonRaw === 'string' && metaJsonRaw.length > 0) {
+          meta = JSON.parse(metaJsonRaw);
+        }
+      } catch (e) {
+        meta = {};
+      }
 
       if (shuttingDown) {
         try {
