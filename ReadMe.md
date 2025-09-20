@@ -113,7 +113,7 @@ app.get("/time", async (req) => {
   await sleep(20000);
   return {
     status: 400,
-    headers: { "Content-Type": "application/json" },         // Custom Returns 
+    headers: { "Content-Type": "application/json" }, // Custom Returns
     body: JSON.stringify({ now: Date.now() }),
   };
 });
@@ -132,6 +132,18 @@ app.post("/submit", (req, res) => {
   let formData = JSON.parse(req.body);
   console.log("bodyData:", formData);
   res.json(formData, 201); // return the JSON response with http-status-code
+});
+
+// Set-Up cookies and User Sessions
+
+app.get("/set-cookies", (req, res) => {
+  console.log("Request:-->", req); // Request Parameters-> contains all info + additional meta data
+  res.send(
+    200, // http-status code
+    { "Content-Type": "text/plain" }, // headers Content-Type
+    ["a=1; Path=/; HttpOnly", "b=2; Path=/; Secure; Max-Age=3600"], // manual cookie setup
+    "hello" // optional Return Body
+  );
 });
 
 app.get("/redirect", (req, res) => {
