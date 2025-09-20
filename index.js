@@ -87,7 +87,7 @@ function createApp() {
         };
 
         try {
-          respond(reqId, JSON.stringify(payload));
+          respond(String(reqId), JSON.stringify(payload));
         } catch (e) {
           console.error('respond failed', e);
         }
@@ -133,11 +133,7 @@ function createApp() {
   }
 
   // Small perf-minded helper: normalize header container (object or array-of-pairs)
-  // - If headersStr is an array-of-pairs, this converts in-place to a plain object with lowercased keys.
-  // - Duplicate headers are accumulated into arrays only when duplicates are present.
-  // - Minimal allocations on fast path.
   function normalizeHeadersCandidate(parsed) {
-    // If it's already an object (and not an array), lowercase keys and return a new object.
     if (parsed && !Array.isArray(parsed) && typeof parsed === 'object') {
       const out = {};
       for (const k in parsed) {
@@ -147,7 +143,6 @@ function createApp() {
       return out;
     }
 
-    // If it's an array, assume it's [ [name, value], ... ] and convert efficiently.
     if (Array.isArray(parsed)) {
       const out = {};
       for (let i = 0; i < parsed.length; i++) {
@@ -165,7 +160,6 @@ function createApp() {
       return out;
     }
 
-    // Unknown type -> return empty
     return {};
   }
 
@@ -173,65 +167,66 @@ function createApp() {
     if (nativeRegistered) return;
     nativeRegistered = true;
 
-    registerJsCallback((_, rawParts) => {
-      if (!rawParts) return;
+    // NEW: single-JSON-string handler (matches optimized Rust)
+    registerJsCallback((err, payloadStr) => {
+      // N-API callback signature expects a string return; return '' at the end.
+      if (err) {
+        console.error('Native error in callback:', err);
+        return '';
+      }
+      if (!payloadStr) return '';
 
-      // full 9-element tuple supported
-      const [
-        reqId,
-        path = '/',
-        method = 'GET',
-        rawQuery = '',
-        headersStr = '{}',
-        body = '',
-        ip = '',
-        cookiesStr = '{}',
-        metaStr = '{}'
-      ] = rawParts;
+      let parsedReq;
+      try {
+        parsedReq = JSON.parse(payloadStr);
+      } catch (e) {
+        console.warn('Failed to parse request payload from native:', e, 'raw:', String(payloadStr).slice(0, 200));
+        return '';
+      }
+
+      // extract fields with fallbacks (for compatibility)
+      const reqId = parsedReq.id ?? parsedReq.reqId ?? '';
+      const path = parsedReq.path ?? '/';
+      const method = (parsedReq.method ?? 'GET').toUpperCase();
+      const rawQuery = parsedReq.query ?? '';
+      const headersRaw = parsedReq.headers ?? parsedReq.headers_json ?? [];
+      const body = parsedReq.body ?? '';
+      const ip = parsedReq.ip ?? '';
+      const cookiesObj = parsedReq.cookies ?? parsedReq.cookies_json ?? {};
+      const meta = parsedReq.meta ?? {};
 
       if (shuttingDown) {
-        respond(reqId, JSON.stringify({ status: 503, headers: { 'Content-Type': 'text/plain' }, body: 'Server is shutting down' }));
-        return;
+        try {
+          respond(String(reqId), JSON.stringify({ status: 503, headers: { 'Content-Type': 'text/plain' }, body: 'Server is shutting down' }));
+        } catch (e) { /* ignore */ }
+        return '';
       }
 
       pending++;
 
-      // -- parse headers/cookies/meta with minimal overhead and normalize --
-      let headers = {};
+      // normalize headers/cookies/meta
+      let headers;
       try {
-        // Fast parse - if headersStr is already a JSON object string or array string, parse it.
-        const parsedH = headersStr ? JSON.parse(headersStr) : {};
-        headers = normalizeHeadersCandidate(parsedH);
-      } catch (e) {
-        headers = {};
-      }
+        headers = normalizeHeadersCandidate(headersRaw);
+      } catch (e) { headers = {}; }
 
       let cookies = {};
       try {
-        const parsedC = cookiesStr ? JSON.parse(cookiesStr) : {};
-        // cookies are usually an object; keep as-is (but ensure it's an object)
-        if (parsedC && typeof parsedC === 'object' && !Array.isArray(parsedC)) cookies = parsedC;
+        if (cookiesObj && typeof cookiesObj === 'object' && !Array.isArray(cookiesObj)) cookies = cookiesObj;
         else cookies = {};
-      } catch (e) {
-        cookies = {};
-      }
+      } catch (e) { cookies = {}; }
 
-      let meta = {};
-      try {
-        const parsedM = metaStr ? JSON.parse(metaStr) : {};
-        if (parsedM && typeof parsedM === 'object' && !Array.isArray(parsedM)) meta = parsedM;
-        else meta = {};
-      } catch (e) {
-        meta = {};
-      }
+      let metaParsed = {};
+      try { if (meta && typeof meta === 'object' && !Array.isArray(meta)) metaParsed = meta; } catch (e) { metaParsed = {}; }
 
-      // parse query string into object
+      // parse query into object
       const query = {};
       if (rawQuery) for (const [k, v] of new URLSearchParams(rawQuery)) query[k] = v;
 
-      const req = { reqId, path, method: method.toUpperCase(), headers, query, body, cookies, meta, remoteAddr: ip, params: {} };
-      const res = createRes(reqId);
+      const req = { reqId: String(reqId), path, method, headers, query, body, cookies, meta: metaParsed, remoteAddr: ip, params: {} };
+      const res = createRes(String(reqId));
 
+      // routing match
       let matched = null;
       for (const r of routes) {
         if (r.method !== req.method && r.method !== 'ALL') continue;
@@ -271,6 +266,8 @@ function createApp() {
 
       function finish() { if (pending > 0) pending--; if (shuttingDown && pending === 0) finalizeShutdown(); }
       try { next(); } catch (e) { next(e); }
+
+      return ''; // napi callback string return
     });
   }
 
@@ -358,5 +355,6 @@ function createApp() {
   installSignals();
   return app;
 }
+
 
 module.exports = { createApp };
