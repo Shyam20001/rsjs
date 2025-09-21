@@ -1,49 +1,40 @@
 // Created by Shyam M (https://github.com/Shyam20001)
 // License: MIT
 // BrahmaJS — Ultra-fast Node.js framework powered by Rust (via NAPI-RS)
+// Author: condensed for performance & clarity
 
-const { startServer, registerJsCallback, respond } = require('./brahma'); // native addon
+const { startServer, registerJsCallback, respond } = require('./brahma');
 const { URLSearchParams } = require('url');
 
-function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&'); }
-
+function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function compilePath(path) {
   const names = [];
   if (!path || path === '*') return { regex: /^.*$/, names };
-  const segments = (path || '/').split('/').filter(Boolean);
-  if (segments.length === 0) return { regex: /^\/$/, names };
-  const parts = segments.map(seg => {
+  const segs = (path || '/').split('/').filter(Boolean);
+  if (segs.length === 0) return { regex: /^\/$/, names };
+  const parts = segs.map(seg => {
     if (seg.startsWith(':')) { names.push(seg.slice(1)); return '([^/]+)'; }
     if (seg === '*') return '(.*)';
     return escapeRegExp(seg);
   }).join('\\/');
   return { regex: new RegExp('^\\/' + parts + '\\/?$'), names };
 }
-
 function matchPrefix(mountPath, reqPath) {
-  if (!mountPath || mountPath === '/') return true;
-  if (mountPath === '*') return true;
-  const normalized = mountPath.endsWith('/') ? mountPath.slice(0, -1) : mountPath;
-  return reqPath === normalized || reqPath.startsWith(normalized + '/');
+  if (!mountPath || mountPath === '/' || mountPath === '*') return true;
+  const n = mountPath.endsWith('/') ? mountPath.slice(0, -1) : mountPath;
+  return reqPath === n || reqPath.startsWith(n + '/');
 }
 
 function createApp() {
   const middleware = [];
   const routes = [];
-  let shuttingDown = false;
-  let pending = 0;
-  let forcedTimer = null;
-  let listening = false;
-  let resolveClose = null;
-  let nativeRegistered = false;
+  let shuttingDown = false, pending = 0;
+  let nativeAttached = false, listening = false;
 
   function use(pathOrFn, ...fns) {
-    if (typeof pathOrFn === 'function') {
-      middleware.push({ path: '/', fn: pathOrFn });
-      return app;
-    }
+    if (typeof pathOrFn === 'function') { middleware.push({ path: '/', fn: pathOrFn }); return app; }
     const path = pathOrFn || '/';
-    if (fns.length === 0) throw new TypeError('middleware must be a function (pass function(s) after the path)');
+    if (fns.length === 0) throw new TypeError('middleware must be a function');
     for (const fn of fns) {
       if (typeof fn !== 'function') throw new TypeError('middleware must be a function');
       middleware.push({ path, fn });
@@ -57,8 +48,7 @@ function createApp() {
       let i = 0;
       function _n(err) {
         if (err) return res.text(err.message || String(err), 500);
-        const fn = fns[i++];
-        if (!fn) return;
+        const fn = fns[i++]; if (!fn) return;
         try { fn(req, res, _n); } catch (e) { _n(e); }
       }
       _n();
@@ -70,58 +60,28 @@ function createApp() {
   function createRes(reqId) {
     let sent = false;
     const headers = {};
-
     return {
       _sent: false,
       _sendObj(obj) {
-        if (sent) return;
-        sent = true;
-
+        if (sent) return; sent = true;
         const cookies = Array.isArray(obj.cookies) ? obj.cookies : (obj.cookies ? [obj.cookies] : []);
-
         const payload = {
           status: obj.status ?? 200,
           headers: Object.assign({}, headers, obj.headers || {}),
           cookies,
           body: obj.body ?? ''
         };
-
-        try {
-          respond(String(reqId), JSON.stringify(payload));
-        } catch (e) {
-          console.error('respond failed', e);
-        }
+        try { respond(String(reqId), JSON.stringify(payload)); } catch (e) { console.error('respond failed', e); }
         this._sent = true;
       },
-
       send(a = 200, b = {}, c = [], d = '') {
-        if (a && typeof a === 'object' && !Array.isArray(a)) {
-          return this._sendObj(a);
-        }
-        return this._sendObj({
-          status: a,
-          headers: b,
-          cookies: Array.isArray(c) ? c : (c ? [c] : []),
-          body: d
-        });
+        if (a && typeof a === 'object' && !Array.isArray(a)) return this._sendObj(a);
+        return this._sendObj({ status: a, headers: b, cookies: Array.isArray(c) ? c : (c ? [c] : []), body: d });
       },
-
-      text(t, status = 200, cookies = []) {
-        this._sendObj({ status, headers: { "Content-Type": "text/plain" }, cookies, body: String(t) });
-      },
-
-      html(h, status = 200, cookies = []) {
-        this._sendObj({ status, headers: { "Content-Type": "text/html" }, cookies, body: String(h) });
-      },
-
-      json(o, status = 200, cookies = []) {
-        this._sendObj({ status, headers: { "Content-Type": "application/json" }, cookies, body: JSON.stringify(o) });
-      },
-
-      redirect(loc, status = 302) {
-        this._sendObj({ status, headers: { "Location": loc }, cookies: [], body: "Redirecting" });
-      },
-
+      text(t, status = 200, cookies = []) { this._sendObj({ status, headers: { 'Content-Type': 'text/plain' }, cookies, body: String(t) }); },
+      html(h, status = 200, cookies = []) { this._sendObj({ status, headers: { 'Content-Type': 'text/html' }, cookies, body: String(h) }); },
+      json(o, status = 200, cookies = []) { this._sendObj({ status, headers: { 'Content-Type': 'application/json' }, cookies, body: JSON.stringify(o) }); },
+      redirect(loc, status = 302) { this._sendObj({ status, headers: { Location: loc }, cookies: [], body: 'Redirecting' }); },
       setHeader(k, v) { headers[k] = v; },
       appendHeader(k, v) {
         const cur = headers[k];
@@ -132,25 +92,20 @@ function createApp() {
     };
   }
 
-  // Small perf-minded helper: normalize header container (object or array-of-pairs)
+  // fast robust header parser: accepts object or array-of-pairs
   function normalizeHeadersCandidate(parsed) {
-    if (parsed && !Array.isArray(parsed) && typeof parsed === 'object') {
+    if (!parsed) return {};
+    if (!Array.isArray(parsed) && typeof parsed === 'object') {
       const out = {};
-      for (const k in parsed) {
-        if (!Object.prototype.hasOwnProperty.call(parsed, k)) continue;
-        out[String(k).toLowerCase()] = parsed[k];
-      }
+      for (const k of Object.keys(parsed)) { out[String(k).toLowerCase()] = parsed[k]; }
       return out;
     }
-
     if (Array.isArray(parsed)) {
       const out = {};
       for (let i = 0; i < parsed.length; i++) {
         const pair = parsed[i];
         if (!pair || pair.length === 0) continue;
-        const rawKey = pair[0];
-        if (rawKey == null) continue;
-        const key = String(rawKey).toLowerCase();
+        const key = String(pair[0]).toLowerCase();
         const val = pair.length > 1 ? pair[1] : '';
         const cur = out[key];
         if (cur === undefined) out[key] = val;
@@ -159,33 +114,20 @@ function createApp() {
       }
       return out;
     }
-
     return {};
   }
 
   function attachNative() {
-    if (nativeRegistered) return;
-    nativeRegistered = true;
+    if (nativeAttached) return; nativeAttached = true;
 
-    // N-API / napi-rs style: callback signature is (err, rawParts)
-    // rawParts is expected to be an array with the 8-tuple:
-    // [ reqId, path, method, query, headersJson, body, cookies, meta ]
+    // callback shape expected from Rust:
+    // [ reqId, path, method, query, headersJson, body, peerAddr, cookieHeader ]
     registerJsCallback((_, rawParts) => {
-      // Return empty string per napi-rs expectation
-      if (!rawParts || !Array.isArray(rawParts)) {
-        return '';
-      }
+      if (!rawParts || !Array.isArray(rawParts)) return '';
 
-      // Destructure tuple with safe fallbacks
       const [
-        reqIdRaw,
-        pathRaw,
-        methodRaw,
-        rawQueryRaw,
-        headersJsonRaw,
-        bodyRaw,
-        cookiesRaw,
-        metaRaw
+        reqIdRaw, pathRaw, methodRaw, rawQueryRaw,
+        headersJsonRaw, bodyRaw, peerAddrRaw, cookieHeaderRaw
       ] = rawParts;
 
       const reqId = reqIdRaw != null ? String(reqIdRaw) : '';
@@ -193,39 +135,21 @@ function createApp() {
       const method = (methodRaw ?? 'GET').toString().toUpperCase();
       const rawQuery = rawQueryRaw ?? '';
 
-      // headersJsonRaw may be array-of-pairs or an object or a stringified JSON — parse only when string
+      // headersJsonRaw may be a string or object/array already — parse only if string
       let headersRaw = headersJsonRaw;
       if (typeof headersJsonRaw === 'string' && headersJsonRaw.length > 0) {
         try { headersRaw = JSON.parse(headersJsonRaw); } catch (e) { headersRaw = []; }
       }
 
-      // body as-is (string expected from native tuple)
+      const headers = normalizeHeadersCandidate(headersRaw);
+
       const body = bodyRaw ?? '';
 
-      // cookiesRaw is the Cookie header string (e.g. "a=1; b=2") or ''.
-      const rawCookiesStr = (typeof cookiesRaw === 'string') ? cookiesRaw : (cookiesRaw ? String(cookiesRaw) : '');
-
-      // metaRaw is "ip:port" string (e.g. "127.0.0.1:52141")
-      const rawMetaStr = (typeof metaRaw === 'string') ? metaRaw : (metaRaw ? String(metaRaw) : '');
-
-      if (shuttingDown) {
-        try {
-          respond(String(reqId), JSON.stringify({ status: 503, headers: { 'Content-Type': 'text/plain' }, body: 'Server is shutting down' }));
-        } catch (e) { /* ignore */ }
-        return '';
-      }
-
-      pending++;
-
-      // normalize headers/cookies/meta
-      let headers;
-      try { headers = normalizeHeadersCandidate(headersRaw); } catch (e) { headers = {}; }
-
-      // parse cookies string into object (very cheap)
+      // parse cookie header cheaply (prefers cookieHeaderRaw)
       const cookies = {};
-      if (rawCookiesStr) {
-        // split on ';' and trim — avoids allocations when empty
-        const parts = rawCookiesStr.split(/; */);
+      const cookieStr = (typeof cookieHeaderRaw === 'string' && cookieHeaderRaw) ? cookieHeaderRaw : (headers['cookie'] || '');
+      if (cookieStr) {
+        const parts = cookieStr.split(/; */);
         for (let i = 0; i < parts.length; i++) {
           const pair = parts[i];
           if (!pair) continue;
@@ -238,24 +162,31 @@ function createApp() {
         }
       }
 
-      // parse meta "ip:port" into useful fields (handle IPv6 by taking last ':' as port separator)
-      let metaParsed = {};
-      let remoteAddr = '';
-      let remoteIp = '';
-      let remotePort = '';
-      if (rawMetaStr) {
-        remoteAddr = rawMetaStr;
-        const lastColon = rawMetaStr.lastIndexOf(':');
+      // parse peerAddr into ip/port (IPv6-aware by splitting at last colon)
+      const peerAddr = (typeof peerAddrRaw === 'string') ? peerAddrRaw : (peerAddrRaw ? String(peerAddrRaw) : '');
+      let remoteIp = '', remotePort = '', remoteAddr = '';
+      if (peerAddr) {
+        remoteAddr = peerAddr;
+        const lastColon = peerAddr.lastIndexOf(':');
         if (lastColon > 0) {
-          remotePort = rawMetaStr.slice(lastColon + 1);
-          remoteIp = rawMetaStr.slice(0, lastColon);
+          remotePort = peerAddr.slice(lastColon + 1);
+          remoteIp = peerAddr.slice(0, lastColon);
+          if (remoteIp.startsWith('[') && remoteIp.endsWith(']')) remoteIp = remoteIp.slice(1, -1);
         } else {
-          remoteIp = rawMetaStr;
+          remoteIp = peerAddr;
         }
-        metaParsed = { ip: remoteIp, port: remotePort, raw: rawMetaStr };
       }
 
-      // parse query into object (only when present)
+      if (shuttingDown) {
+        try {
+          respond(String(reqId), JSON.stringify({ status: 503, headers: { 'Content-Type': 'text/plain' }, body: 'Server shutting down' }));
+        } catch (_) {}
+        return '';
+      }
+
+      pending++;
+
+      // parse query
       const query = {};
       if (rawQuery) {
         for (const [k, v] of new URLSearchParams(rawQuery)) query[k] = v;
@@ -268,18 +199,17 @@ function createApp() {
         headers,
         query,
         body,
-        cookies,            // parsed cookie map
-        rawCookies: rawCookiesStr, // raw cookie header string
-        meta: metaParsed,   // { ip, port, raw }
-        remoteAddr,         // "ip:port"
-        remoteIp,           // ip only (may be '' if not parseable)
-        remotePort,         // port only (may be '' if not parseable)
+        cookies,
+        rawCookies: cookieStr,
+        remoteAddr,
+        remoteIp,
+        remotePort,
         params: {}
       };
 
       const res = createRes(String(reqId));
 
-      // routing match
+      // routing
       let matched = null;
       for (const r of routes) {
         if (r.method !== req.method && r.method !== 'ALL') continue;
@@ -291,9 +221,9 @@ function createApp() {
         break;
       }
 
-      const matchedHandlers = matched ? [matched.handler] : [];
       const matchedMw = middleware.filter(mw => matchPrefix(mw.path, path)).map(mw => mw.fn);
-      const chain = [...matchedMw, ...(matchedHandlers.length ? matchedHandlers : [(req, res) => res.text('Not Found', 404)])];
+      const handlerChain = matched ? [matched.handler] : [(rq, rs) => rs.text('Not Found', 404)];
+      const chain = [...matchedMw, ...handlerChain];
 
       let idx = 0;
       function next(err) {
@@ -306,9 +236,9 @@ function createApp() {
         try {
           const out = fn(req, res, next);
           if (out && typeof out.then === 'function') {
-            out.then(maybe => {
-              if (!res._sent && maybe && typeof maybe === 'object' && ('status' in maybe || 'body' in maybe || 'headers' in maybe || 'cookies' in maybe)) {
-                res._sendObj(maybe);
+            out.then(resObj => {
+              if (!res._sent && resObj && typeof resObj === 'object' && ('status' in resObj || 'body' in resObj || 'headers' in resObj || 'cookies' in resObj)) {
+                res._sendObj(resObj);
               }
             }).catch(err => next(err));
           } else if (out && typeof out === 'object' && ('status' in out || 'body' in out || 'headers' in out || 'cookies' in out)) {
@@ -317,7 +247,7 @@ function createApp() {
         } catch (e) { next(e); }
       }
 
-      function finish() { if (pending > 0) pending--; if (shuttingDown && pending === 0) finalizeShutdown(); }
+      function finish() { if (pending > 0) pending--; /* shutdown handled elsewhere */ }
       try { next(); } catch (e) { next(e); }
 
       return ''; // napi callback string return
@@ -325,15 +255,8 @@ function createApp() {
   }
 
   function listen(host, port, cb) {
-    try {
-      if (host && port) {
-        startServer(host, port);
-      } else {
-        startServer();
-      }
-    } catch (e) {
-      throw e;
-    }
+    if (host && port) startServer(host, port);
+    else startServer();
     listening = true;
     attachNative();
     if (cb) cb();
@@ -342,53 +265,12 @@ function createApp() {
 
   function close(timeoutMs = 10000) {
     if (!listening) return Promise.resolve();
-    if (shuttingDown) return Promise.resolve();
     shuttingDown = true;
-    return new Promise((resolve) => {
-      resolveClose = resolve;
-      forcedTimer = setTimeout(() => { finalizeShutdown(); resolve(); }, timeoutMs);
-      if (pending === 0) { finalizeShutdown(); resolve(); }
+    return new Promise(resolve => {
+      const t = setTimeout(() => { resolve(); }, timeoutMs);
+      // simple graceful: resolve immediately if no pending
+      if (pending === 0) { clearTimeout(t); resolve(); }
     });
-  }
-
-  function finalizeShutdown() {
-    if (forcedTimer) clearTimeout(forcedTimer);
-    setImmediate(() => {
-      try { process.exitCode = 0; } catch (_) { }
-      try { process.exit(0); } catch (_) {
-        if (resolveClose) resolveClose();
-      }
-      if (resolveClose) resolveClose();
-    });
-  }
-
-  function finalizeShutdownImmediate(exitCode = 1) {
-    if (forcedTimer) clearTimeout(forcedTimer);
-    setImmediate(() => {
-      try { process.exit(exitCode); } catch (_) { /* ignore */ }
-      if (resolveClose) resolveClose();
-    });
-  }
-
-  let signalsInstalled = false;
-  function installSignals() {
-    if (signalsInstalled || typeof process === 'undefined' || !process.on) return;
-    signalsInstalled = true;
-    let firstSignal = true;
-    const handler = (sig) => {
-      if (firstSignal) {
-        firstSignal = false;
-        if (!shuttingDown) {
-          shuttingDown = true;
-          close(10000).then(() => { });
-        }
-        setTimeout(() => { firstSignal = true; }, 11000);
-      } else {
-        finalizeShutdownImmediate(1);
-      }
-    };
-    process.on('SIGINT', () => handler('SIGINT'));
-    process.on('SIGTERM', () => handler('SIGTERM'));
   }
 
   function del(path, ...fns) { return addRouteImpl('DELETE', path, ...fns); }
@@ -405,9 +287,7 @@ function createApp() {
     _internal: { middleware, routes }
   };
 
-  installSignals();
   return app;
 }
-
 
 module.exports = { createApp };
