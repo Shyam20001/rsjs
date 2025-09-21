@@ -180,7 +180,7 @@ function createApp() {
       if (shuttingDown) {
         try {
           respond(String(reqId), JSON.stringify({ status: 503, headers: { 'Content-Type': 'text/plain' }, body: 'Server shutting down' }));
-        } catch (_) {}
+        } catch (_) { }
         return '';
       }
 
