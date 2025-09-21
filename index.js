@@ -1,10 +1,6 @@
 // Created by Shyam M (https://github.com/Shyam20001)
 // License: MIT
 // BrahmaJS — Ultra-fast Node.js framework powered by Rust (via NAPI-RS)
-// brahma-createApp-rawparts.js
-// Minimal changes from your original createApp; attachNative now expects (err, rawParts)
-// rawParts: [ reqId, path, method, query, headersJson, body, ip, cookiesJson, metaJson ]
-
 
 const { startServer, registerJsCallback, respond } = require('./brahma'); // native addon
 const { URLSearchParams } = require('url');
@@ -172,12 +168,11 @@ function createApp() {
     nativeRegistered = true;
 
     // N-API / napi-rs style: callback signature is (err, rawParts)
-    // rawParts is expected to be an array with the 9-tuple:
-    // [ reqId, path, method, query, headersJson, body, ip, cookiesJson, metaJson ]
+    // rawParts is expected to be an array with the 8-tuple:
+    // [ reqId, path, method, query, headersJson, body, cookies, meta ]
     registerJsCallback((_, rawParts) => {
       // Return empty string per napi-rs expectation
       if (!rawParts || !Array.isArray(rawParts)) {
-        // nothing to do
         return '';
       }
 
@@ -189,9 +184,8 @@ function createApp() {
         rawQueryRaw,
         headersJsonRaw,
         bodyRaw,
-        ipRaw,
-        cookiesJsonRaw,
-        metaJsonRaw
+        cookiesRaw,
+        metaRaw
       ] = rawParts;
 
       const reqId = reqIdRaw != null ? String(reqIdRaw) : '';
@@ -199,41 +193,20 @@ function createApp() {
       const method = (methodRaw ?? 'GET').toString().toUpperCase();
       const rawQuery = rawQueryRaw ?? '';
 
-      // headersJsonRaw may be array-of-pairs or an object or a stringified JSON — try to parse only when string
+      // headersJsonRaw may be array-of-pairs or an object or a stringified JSON — parse only when string
       let headersRaw = headersJsonRaw;
-      try {
-        if (typeof headersJsonRaw === 'string' && headersJsonRaw.length > 0) {
-          headersRaw = JSON.parse(headersJsonRaw);
-        }
-      } catch (e) {
-        headersRaw = [];
+      if (typeof headersJsonRaw === 'string' && headersJsonRaw.length > 0) {
+        try { headersRaw = JSON.parse(headersJsonRaw); } catch (e) { headersRaw = []; }
       }
 
       // body as-is (string expected from native tuple)
       const body = bodyRaw ?? '';
 
-      // ip
-      const ip = ipRaw ?? '';
+      // cookiesRaw is the Cookie header string (e.g. "a=1; b=2") or ''.
+      const rawCookiesStr = (typeof cookiesRaw === 'string') ? cookiesRaw : (cookiesRaw ? String(cookiesRaw) : '');
 
-      // cookies: may be string or object
-      let cookiesObj = cookiesJsonRaw;
-      try {
-        if (typeof cookiesJsonRaw === 'string' && cookiesJsonRaw.length > 0) {
-          cookiesObj = JSON.parse(cookiesJsonRaw);
-        }
-      } catch (e) {
-        cookiesObj = {};
-      }
-
-      // meta: may be string or object
-      let meta = metaJsonRaw;
-      try {
-        if (typeof metaJsonRaw === 'string' && metaJsonRaw.length > 0) {
-          meta = JSON.parse(metaJsonRaw);
-        }
-      } catch (e) {
-        meta = {};
-      }
+      // metaRaw is "ip:port" string (e.g. "127.0.0.1:52141")
+      const rawMetaStr = (typeof metaRaw === 'string') ? metaRaw : (metaRaw ? String(metaRaw) : '');
 
       if (shuttingDown) {
         try {
@@ -246,24 +219,64 @@ function createApp() {
 
       // normalize headers/cookies/meta
       let headers;
-      try {
-        headers = normalizeHeadersCandidate(headersRaw);
-      } catch (e) { headers = {}; }
+      try { headers = normalizeHeadersCandidate(headersRaw); } catch (e) { headers = {}; }
 
-      let cookies = {};
-      try {
-        if (cookiesObj && typeof cookiesObj === 'object' && !Array.isArray(cookiesObj)) cookies = cookiesObj;
-        else cookies = {};
-      } catch (e) { cookies = {}; }
+      // parse cookies string into object (very cheap)
+      const cookies = {};
+      if (rawCookiesStr) {
+        // split on ';' and trim — avoids allocations when empty
+        const parts = rawCookiesStr.split(/; */);
+        for (let i = 0; i < parts.length; i++) {
+          const pair = parts[i];
+          if (!pair) continue;
+          const idx = pair.indexOf('=');
+          if (idx > 0) {
+            const k = pair.slice(0, idx).trim();
+            const v = pair.slice(idx + 1).trim();
+            if (k) cookies[k] = v;
+          }
+        }
+      }
 
+      // parse meta "ip:port" into useful fields (handle IPv6 by taking last ':' as port separator)
       let metaParsed = {};
-      try { if (meta && typeof meta === 'object' && !Array.isArray(meta)) metaParsed = meta; } catch (e) { metaParsed = {}; }
+      let remoteAddr = '';
+      let remoteIp = '';
+      let remotePort = '';
+      if (rawMetaStr) {
+        remoteAddr = rawMetaStr;
+        const lastColon = rawMetaStr.lastIndexOf(':');
+        if (lastColon > 0) {
+          remotePort = rawMetaStr.slice(lastColon + 1);
+          remoteIp = rawMetaStr.slice(0, lastColon);
+        } else {
+          remoteIp = rawMetaStr;
+        }
+        metaParsed = { ip: remoteIp, port: remotePort, raw: rawMetaStr };
+      }
 
-      // parse query into object
+      // parse query into object (only when present)
       const query = {};
-      if (rawQuery) for (const [k, v] of new URLSearchParams(rawQuery)) query[k] = v;
+      if (rawQuery) {
+        for (const [k, v] of new URLSearchParams(rawQuery)) query[k] = v;
+      }
 
-      const req = { reqId: String(reqId), path, method, headers, query, body, cookies, meta: metaParsed, remoteAddr: ip, params: {} };
+      const req = {
+        reqId: String(reqId),
+        path,
+        method,
+        headers,
+        query,
+        body,
+        cookies,            // parsed cookie map
+        rawCookies: rawCookiesStr, // raw cookie header string
+        meta: metaParsed,   // { ip, port, raw }
+        remoteAddr,         // "ip:port"
+        remoteIp,           // ip only (may be '' if not parseable)
+        remotePort,         // port only (may be '' if not parseable)
+        params: {}
+      };
+
       const res = createRes(String(reqId));
 
       // routing match
