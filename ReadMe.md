@@ -99,6 +99,35 @@ const { createApp } = require("brahma-firelight");
 
 const app = createApp();
 
+// CORS config
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin); // echo back client origin
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  } else {
+    // fallback (same-origin or no Origin header)
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  }
+
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (req.method === "OPTIONS") {
+    res.send(204);
+  } else {
+    next();
+  }
+});
+
+// Middlewares
+
+function authMiddleware(req, res, next) {
+  if (!req.headers["authorization"]) return res.text("Unauthorized", 401);
+  next();
+}
+
 // utils.js
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -150,9 +179,27 @@ app.get("/redirect", (req, res) => {
   res.redirect("https://google.com");
 });
 
+app.post("/protected", authMiddleware, (req, res) =>
+  res.json({ success: true })
+);
+
 app.listen("0.0.0.0", 2000, () => {
   console.log("Server listening on port 2000");
 });
+
+// Enable built in Graceful Shutdown (optional for production use)
+
+// process.on('SIGINT', async () => {
+//   console.log('SIGINT → shutting down...');
+//   await app.close(5000); // wait up to 5s for requests
+//   process.exit(0);
+// });
+
+// process.on('SIGTERM', async () => {
+//   console.log('SIGTERM → shutting down...');
+//   await app.close(5000);
+//   process.exit(0);
+// });
 ```
 
 ---
