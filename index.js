@@ -4,9 +4,9 @@
 // Author: condensed for performance & clarity
 
 const { startServer, registerJsCallback, respond } = require('./brahma');
-const { URLSearchParams } = require('url');
+const { URLSearchParams } = require('url'); // kept for compatibility in case used elsewhere
 
-function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'); }
 function compilePath(path) {
   const names = [];
   if (!path || path === '*') return { regex: /^.*$/, names };
@@ -28,8 +28,16 @@ function matchPrefix(mountPath, reqPath) {
 function createApp() {
   const middleware = [];
   const routes = [];
+  // routeMap per method: exact map and param array
+  const routeMap = {}; // e.g. routeMap["GET"] = Map of exact, routeMap["GET_param"] = []
+
   let shuttingDown = false, pending = 0;
   let nativeAttached = false, listening = false;
+
+  function ensureRouteBuckets(method) {
+    if (!routeMap[method]) routeMap[method] = new Map();
+    if (!routeMap[method + '_param']) routeMap[method + '_param'] = [];
+  }
 
   function use(pathOrFn, ...fns) {
     if (typeof pathOrFn === 'function') { middleware.push({ path: '/', fn: pathOrFn }); return app; }
@@ -53,7 +61,23 @@ function createApp() {
       }
       _n();
     };
-    routes.push({ method: method.toUpperCase(), path, handler, pathInfo: compilePath(path) });
+
+    const route = { method: method.toUpperCase(), path, handler, pathInfo: compilePath(path) };
+    routes.push(route);
+
+    // maintain routeMap
+    const m = route.method;
+    ensureRouteBuckets(m);
+    // static path: no params and no wildcard
+    const isParam = route.pathInfo.names.length > 0 || path.includes('*');
+    if (!isParam) {
+      // normalize key: ensure leading slash
+      const key = (path === '' || path === '/') ? '/' : (path.startsWith('/') ? path : '/' + path);
+      routeMap[m].set(key, route);
+    } else {
+      routeMap[m + '_param'].push(route);
+    }
+
     return app;
   }
 
@@ -186,10 +210,22 @@ function createApp() {
 
       pending++;
 
-      // parse query
+      // parse query (faster small parser, behavior-preserving for simple queries)
       const query = {};
       if (rawQuery) {
-        for (const [k, v] of new URLSearchParams(rawQuery)) query[k] = v;
+        const parts = String(rawQuery).split('&');
+        for (let i = 0; i < parts.length; i++) {
+          const p = parts[i];
+          if (!p) continue;
+          const idx = p.indexOf('=');
+          if (idx === -1) {
+            try { query[decodeURIComponent(p)] = ''; } catch (e) { query[p] = ''; }
+          } else {
+            const key = p.slice(0, idx);
+            const val = p.slice(idx + 1);
+            try { query[decodeURIComponent(key)] = decodeURIComponent(val); } catch (e) { query[key] = val; }
+          }
+        }
       }
 
       const req = {
@@ -209,21 +245,47 @@ function createApp() {
 
       const res = createRes(String(reqId));
 
-      // routing
+      // routing: fast exact-map then param arrays
       let matched = null;
-      for (const r of routes) {
-        if (r.method !== req.method && r.method !== 'ALL') continue;
-        const m = r.pathInfo.regex.exec(path);
-        if (!m) continue;
-        req.params = {};
-        for (let i = 0; i < r.pathInfo.names.length; i++) req.params[r.pathInfo.names[i]] = decodeURIComponent(m[i + 1] || '');
-        matched = r;
-        break;
+
+      // fast exact match for method
+      const methodMap = routeMap[req.method];
+      if (methodMap && methodMap.has(path)) {
+        matched = methodMap.get(path);
+      } else {
+        // check method param routes then ALL param routes
+        const methodParam = routeMap[req.method + '_param'] || [];
+        const allParam = routeMap['ALL_param'] || [];
+        const paramLists = methodParam.length ? methodParam : [];
+        // concat with ALL_param without allocating a new array when possible
+        let found = false;
+        for (let i = 0; i < methodParam.length && !found; i++) {
+          const r = methodParam[i];
+          const m = r.pathInfo.regex.exec(path);
+          if (!m) continue;
+          req.params = {};
+          for (let j = 0; j < r.pathInfo.names.length; j++) req.params[r.pathInfo.names[j]] = decodeURIComponent(m[j + 1] || '');
+          matched = r; found = true; break;
+        }
+        if (!matched) {
+          for (let i = 0; i < allParam.length; i++) {
+            const r = allParam[i];
+            const m = r.pathInfo.regex.exec(path);
+            if (!m) continue;
+            req.params = {};
+            for (let j = 0; j < r.pathInfo.names.length; j++) req.params[r.pathInfo.names[j]] = decodeURIComponent(m[j + 1] || '');
+            matched = r; break;
+          }
+        }
       }
 
-      const matchedMw = middleware.filter(mw => matchPrefix(mw.path, path)).map(mw => mw.fn);
-      const handlerChain = matched ? [matched.handler] : [(rq, rs) => rs.text('Not Found', 404)];
-      const chain = [...matchedMw, ...handlerChain];
+      // build chain without intermediate arrays
+      const chain = [];
+      for (let i = 0; i < middleware.length; i++) {
+        const mw = middleware[i];
+        if (matchPrefix(mw.path, path)) chain.push(mw.fn);
+      }
+      chain.push(matched ? matched.handler : ((rq, rs) => rs.text('Not Found', 404)));
 
       let idx = 0;
       function next(err) {
@@ -284,10 +346,10 @@ function createApp() {
     delete: del,
     listen,
     close,
-    _internal: { middleware, routes }
+    _internal: { middleware, routes, routeMap }
   };
 
   return app;
 }
 
-module.exports = { createApp };
+module.exports = { createApp };3
