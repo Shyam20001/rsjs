@@ -251,23 +251,6 @@ app.get("/delay", async (req, res) => {
 
 ---
 
-## JSON Parsing Engine
-
-Starting from **v1.5.10**, Brahma switched its JSON parser from [`serde_json`](https://docs.rs/serde_json)  
-to [**simd-json**](https://github.com/simd-lite/simd-json).
-
-- `serde_json` → safe, widely used, pure Rust JSON parser.
-- `simd-json` → high-performance JSON parser that uses SIMD CPU instructions (AVX2/SSE4.2/NEON)  
-  to accelerate parsing. On modern CPUs this delivers **20–50% throughput gains** with lower latency.
-- If SIMD is not supported on the host CPU, `simd-json` automatically **falls back** to a safe scalar parser,  
-  so functionality remains correct on all platforms.
-
----
-
-## Changelog
-
-Full release history and performance notes are available in the [Changelog](https://github.com/Shyam20001/rsjs/blob/master/CHANGELOG.md).
-
 ## Status & Feedback
 
 - **Beta / experimental** — actively refined based on usage.

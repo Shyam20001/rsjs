@@ -1,10 +1,15 @@
 // Created by Shyam M (https://github.com/Shyam20001)
 // License: MIT
-// BrahmaJS — Ultra-fast Node.js framework powered by Rust with SIMD-JSON (via NAPI-RS)
+// BrahmaJS — Ultra-fast Node.js framework powered by Rust (via NAPI-RS)
 // Author: condensed for performance & clarity
 
 const { startServer, registerJsCallback, respond } = require('./brahma');
-const { URLSearchParams } = require('url'); // kept for compatibility in case used elsewhere
+
+function bufferFromBody(raw) {
+  if (!raw) return Buffer.alloc(0);
+  if (Buffer.isBuffer(raw)) return raw; // zero-copy fast path
+  return Buffer.from(raw);
+}
 
 function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'); }
 function compilePath(path) {
@@ -167,7 +172,8 @@ function createApp() {
 
       const headers = normalizeHeadersCandidate(headersRaw);
 
-      const body = bodyRaw ?? '';
+      // Normalize body into Buffer (no parsing here; leave it to handler)
+      const body = bufferFromBody(bodyRaw);
 
       // parse cookie header cheaply (prefers cookieHeaderRaw)
       const cookies = {};
@@ -352,4 +358,4 @@ function createApp() {
   return app;
 }
 
-module.exports = { createApp }; 3
+module.exports = { createApp };
