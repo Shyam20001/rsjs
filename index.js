@@ -1,6 +1,6 @@
 // Created by Shyam M (https://github.com/Shyam20001)
 // License: MIT
-// BrahmaJS — Ultra-fast Node.js framework powered by Rust (via NAPI-RS)
+// BrahmaJS — Ultra-fast Node.js framework powered by Rust with SIMD-JSON (via NAPI-RS)
 // Author: condensed for performance & clarity
 
 const { startServer, registerJsCallback, respond } = require('./brahma');
@@ -352,4 +352,4 @@ function createApp() {
   return app;
 }
 
-module.exports = { createApp };3
+module.exports = { createApp }; 3
