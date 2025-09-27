@@ -15,6 +15,6 @@ All notable changes to this project will be documented here.
 ### Fixed
 - Reduced latency spikes under load due to parser optimizations.
 
-## [1.5.8] - 2025-09-20
+## [1.5.8] - 2025-09-24
 ### Added
 - Previous stable release (serde_json-based).
