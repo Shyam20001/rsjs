@@ -1,218 +1,153 @@
-// FINAL 08242025 Async Support 
-let summaId
 
-// tester.js
-const { startServer, registerJsCallback, respond, shutdownServer, parseFile, registerRustHandler } = require('./index');
-//setStaticDir(require('path').join(__dirname, '08092025'));
 
-// ---------- utils ----------
-const parseJSON = (s, fallback = {}) => { try { return s ? JSON.parse(s) : fallback; } catch { return fallback; } };
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+// const { startServer, useBrahma, text, html, json, redirect } = require('./brahma');
 
-// If you're on Node 18+, global fetch exists; otherwise: const fetch = (...a) => import('node-fetch').then(({default:f}) => f(...a));
+// useBrahma((req) => {
+//   if (req.path === "/") {
+//     return text("Hello from Brahma 🚀");
+//   }
+//   if (req.path === "/page") {
+//     return html("<h1>Hello HTML</h1><p>This is raw HTML served by Brahma</p>");
+//   }
+//   if (req.path === "/api") {
+//     return json({ message: "Hello JSON API" });
+//   }
+//   if (req.path === "/go") {
+//     return redirect("/page");
+//   }
+//   return { status: 404, body: "Not Found" };
+// });
 
-// ---------- background job store ----------
-const jobs = new Map(); // id -> { status: 'pending'|'done'|'error', result?: any, error?: string }
-
-// kick off a fake long job
-async function runLongJob(id, payload) {
-  try {
-    jobs.set(id, { status: 'pending' });
-    // simulate work
-    await sleep(2000);
-    // could do DB, queue, compute, etc.
-    jobs.set(id, { status: 'done', result: { ok: true, received: payload ?? null } });
-  } catch (e) {
-    jobs.set(id, { status: 'error', error: String(e?.message || e) });
-  }
-}
-// "json" mode: Rust will parse JSON body and echo it back as JSON
-registerRustHandler('/rust-json', 'json');   //v2 stable
-
-// Register a Rust-native handler for /hiii
-// registerRustHandler("/hiii", (reqJson, ctxJson) => {
-//   const req = JSON.parse(reqJson);
-//   const ctx = JSON.parse(ctxJson);
-
-//   console.log("Rust-native handler request:", reqJson, ctxJson);
-
-//   // Must return a JSON string, not an object!
-//   return JSON.stringify({
-//     status: 200,
-//     headers: { "Content-Type": "text/plain" },
-//     body: "Hello from Rust-native handler!"
-//   });
+// startServer("0.0.0.0", 2000).then(() => {
+//   console.log("🔥 Server running at http://0.0.0.0:2000");
 // });
 
 
+// const { startServer, useBrahma, text, html, json, redirect } = require('./brahma');
 
-// ---------- router (async) ----------
-async function route({ method, path, query, headers, body }) {
-  // parse JSON if content-type indicates
-  const ct = (headers['content-type'] || headers['Content-Type'] || '').toLowerCase();
-  const jsonBody = ct.includes('application/json') ? parseJSON(body, null) : null;
+// // A helper to sleep
+// function sleep(ms) {
+//   return new Promise(resolve => setTimeout(resolve, ms));
+// }
 
-  // 1) trivial async
-  if (path === '/hi') {
-    //   console.log(method, path, query, headers, body)
-   // await sleep(2000); // simulate I/O
-    return {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'poda punda', summaId }),
-    };
-  }
+// useBrahma(async (req) => {
+// //  console.log(req)
 
-  // 2) HTML response
-  if (path === '/bye') {
-    //  await sleep(1000);
-    return {
-      status: 200,
-      headers: { 'Content-Type': 'text/html' },
-      body: `<h1>Hello, ${path}</h1>`,
-    };
-  }
+//   if (req.path === "/submit") {
+//     // Log the body
+//   //  console.log("Got POST body:", req.body);
 
-  // 3) external API call
-  if (path === '/github') {
-    const r = await fetch('https://api.github.com/rate_limit', { headers: { 'User-Agent': 'brahma-js-demo' } });
-    const data = await r.json();
-    return {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ok: true, data }),
-    };
-  }
+//     try {
+//       const parsed = JSON.parse(req.body);
+//      // await sleep(3000);
+//       return json({ ok: true, parsed });
+//     } catch {
+//       return text("Received: " + req.body);
+//     }
+//   }
+//   if (req.path === "/") {
+//     return text("Hello from Brahma 🚀");
+//   }
 
-  // 4) simulate slow route with per-route timeout guard
-  if (path === '/slow') {
-    // soft timeout pattern in JS (your Rust already has a 30s hard timeout)
-    const guard = new Promise((_, rej) => setTimeout(() => rej(new Error('JS soft timeout 1s')), 1000));
-    const work = (async () => {
-      await sleep(1500); // slower than 1s -> will trigger
-      return { status: 200, headers: { 'Content-Type': 'text/plain' }, body: 'done' };
-    })();
-    try {
-      return await Promise.race([guard, work]);
-    } catch (e) {
-      return { status: 504, headers: { 'Content-Type': 'text/plain' }, body: 'Gateway Timeout (JS)' };
-    }
-  }
+//   if (req.path === "/wait") {
+//     // Async sleep 3 seconds before replying
+//     await sleep(3000);
+//     return text("Hello after 3s async delay ⏳");
+//   }
 
-  // 5) background job creation (returns 202 immediately)
-  if (path === '/start-job' && method === 'POST') {
-    const id = uid();
-    runLongJob(id, jsonBody); // fire & forget
-    return {
-      status: 202,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jobId: id, status: 'accepted' }),
-    };
-  }
+//   if (req.path === "/page") {
+//     return html("<h1>Hello HTML</h1><p>This is raw HTML served by Brahma</p>");
+//   }
 
-  // 6) poll job status
-  if (path.startsWith('/job/')) {
-    const id = path.split('/').pop();
-    const state = jobs.get(id);
-    if (!state) {
-      return { status: 404, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'unknown job id' }) };
-    }
-    return { status: 200, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...state }) };
-  }
+//   if (req.path === "/api") {
+//     return json({ message: "Hello JSON API" });
+//   }
 
-  // 7) echo JSON body back (useful for testing POST)
-  if (path === '/echo' && method === 'POST') {
-    // console.log(body, jsonBody)
-    return {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ you_sent: jsonBody, raw: body, query, headers, method }),
-    };
-  }
+//   if (req.path === "/go") {
+//     return redirect("/page");
+//   }
 
-  // default 404
-  return {
-    status: 404,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ invalid: '404 - Not Found', path }),
-  };
+//   return { status: 404, body: "Not Found" };
+// });
+
+// startServer("0.0.0.0", 2000).then(() => {
+//   console.log("🔥 Server running at http://0.0.0.0:2000");
+// });
+
+
+/// final stable 
+const { startServer, useBrahma, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes } = require('./brahma');
+
+
+// set 2 minutes timeout (120 seconds)
+setJsResponseTimeout(500);
+
+// set max body to 50 MiB
+setMaxBodyBytes(100 * 1024 * 1024); // 52_428_800
+
+console.log('timeout secs:', getJsResponseTimeout()); // prints 120
+console.log('max body bytes:', getMaxBodyBytes());   // prints 52428800
+
+// A helper to sleep
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+useBrahma(async (req, res) => {
+  if (req.path === "/hi") {
+    // console.log(req)
+    return { body: "Hello from Brahma 🚀" }; // simple return
+  }
 
-// ---------- napi callback plumbing ----------
-// With napi-rs tuple TSFN, you receive ONE argument which is an array: [reqId, path, query, headersJson, body]
-registerJsCallback(async (_, args) => {
-  const [reqIdRaw, path, queryStr, headersJson, body] = Array.isArray(args) ? args : [];
-  //  console.log(args)
-  const reqId = (reqIdRaw ?? '').toString();
-  if (!reqId) {
-    console.error('Missing reqId from native callback. Make sure Rust sends (req_id, path, query, headers_json, body).');
+  if (req.path === "/html") {
+    res.html(`<h1>Hello HTML</h1><p>Served by Brahma id: ${req.reqId}</p>`);
+    return; // use helper
+  }
+
+  if (req.path === "/json" && req.method === "POST") {
+    try {
+      const parsed = JSON.parse(req.body);
+      // await sleep(3000);
+      res.json({ youSent: parsed, req });
+    } catch {
+      res.text("Invalid JSON", 400);
+    }
     return;
   }
 
-  // You can parse method from headers (hyper gives it in `:method` header if you forward it),
-  // or tack it onto the query/body from Rust. For now we infer method as GET if no body else POST.
-  const headers = parseJSON(headersJson, {});
-  const method = headers[':method'] || (body && body.length ? 'POST' : 'GET');
-
-  try {
-    const resp = await route({
-      method,
-      path,
-      query: queryStr || '',
-      headers,
-      body: body || '',
-    });
-    //   console.log(resp)
-    respond(reqId, JSON.stringify(resp));
-    summaId = reqId
-  } catch (err) {
-    console.error('Route error:', err);
-    respond(reqId, JSON.stringify({
-      status: 500,
-      headers: { 'Content-Type': 'text/plain' },
-      body: 'Internal Server Error',
-    }));
+  if (req.path === "/go") {
+    res.redirect("/html");
+    return;
   }
-});
 
-// ---------- start ----------
-startServer('0.0.0.0', 2000, 'single-core')
-
-
-// ---------- graceful shutdown ----------
-let shuttingDown = false;
-
-async function gracefulExit(code = 0) {
-  if (shuttingDown) return;
-  shuttingDown = true;
-  try {
-    console.log('→ Graceful shutdown: notifying Rust…');
-    await shutdownServer();          // IMPORTANT: await
-    console.log('✓ Rust shut down. Exiting.');
-  } catch (e) {
-    console.error('Shutdown error:', e);
-  } finally {
-    process.exit(code);
+  if (req.path === "/wait") {
+    // Async sleep 3 seconds before replying
+    await sleep(3000);
+    res.json({ msg: 'poolu' }, 201);
+    return;
   }
-}
 
-// Handle Ctrl+C / kill
-process.on('SIGINT', () => gracefulExit(0));
-process.on('SIGTERM', () => gracefulExit(0));
+  // Set cookies example
+  if (req.path === "/set-cookie") {
+    // set a secure httpOnly session cookie and another small cookie
+    // replace your res.send(...) object call with this:
+    res.send(
+      200,
+      { "Content-Type": "text/plain" },
+      [
+        "a=1; Path=/; HttpOnly",
+        "b=2; Path=/; Secure; Max-Age=3600"
+      ],
+      "hello"
+    );
 
-// Optional: clean up on Node “beforeExit”
-process.on('beforeExit', () => gracefulExit(0));
+    return;
+  }
 
-// Optional: catch unhandled errors and try to shut down cleanly
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught exception:', err);
-  gracefulExit(1);
+  // NOTE: static files: any request to /static/* will be served by the Rust fast-path directly
+  // 
+
+  return { status: 404, body: "Not Found" };
 });
-process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled rejection:', reason);
-  gracefulExit(1);
-});
 
-//console.log(parseFile('./yarn.lock'))
+startServer("0.0.0.0", 3000)

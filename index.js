@@ -393,10 +393,10 @@ if (!nativeBinding) {
 }
 
 module.exports = nativeBinding
-module.exports.parseFile = nativeBinding.parseFile
-module.exports.parseJsonSimd = nativeBinding.parseJsonSimd
+module.exports.getJsResponseTimeout = nativeBinding.getJsResponseTimeout
+module.exports.getMaxBodyBytes = nativeBinding.getMaxBodyBytes
 module.exports.registerJsCallback = nativeBinding.registerJsCallback
-module.exports.registerRustHandler = nativeBinding.registerRustHandler
 module.exports.respond = nativeBinding.respond
-module.exports.shutdownServer = nativeBinding.shutdownServer
+module.exports.setJsResponseTimeout = nativeBinding.setJsResponseTimeout
+module.exports.setMaxBodyBytes = nativeBinding.setMaxBodyBytes
 module.exports.startServer = nativeBinding.startServer
