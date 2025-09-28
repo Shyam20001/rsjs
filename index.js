@@ -3,13 +3,7 @@
 // BrahmaJS — Ultra-fast Node.js framework powered by Rust (via NAPI-RS)
 // Author: condensed for performance & clarity
 
-const { startServer, registerJsCallback, respond } = require('./brahma');
-
-function bufferFromBody(raw) {
-  if (!raw) return Buffer.alloc(0);
-  if (Buffer.isBuffer(raw)) return raw; // zero-copy fast path
-  return Buffer.from(raw);
-}
+const { startServer, registerJsCallback, respond, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes } = require('./index'); // native addon
 
 function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'); }
 function compilePath(path) {
@@ -172,8 +166,8 @@ function createApp() {
 
       const headers = normalizeHeadersCandidate(headersRaw);
 
-      // Normalize body into Buffer (no parsing here; leave it to handler)
-      const body = bufferFromBody(bodyRaw);
+      // Normalize body into  Raw-Buffer (no parsing here; leave it to handler)
+      const body = bodyRaw || Buffer.alloc(0);
 
       // parse cookie header cheaply (prefers cookieHeaderRaw)
       const cookies = {};
@@ -358,4 +352,10 @@ function createApp() {
   return app;
 }
 
-module.exports = { createApp };
+module.exports = {
+  createApp,
+  getJsResponseTimeout,
+  getMaxBodyBytes,
+  setMaxBodyBytes,
+  setJsResponseTimeout
+};

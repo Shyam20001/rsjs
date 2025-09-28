@@ -95,9 +95,26 @@ nypm add brahma-firelight
 ```
 
 ```js
-const { createApp } = require("brahma-firelight");
+const {
+  createApp,
+  getJsResponseTimeout,
+  getMaxBodyBytes,
+  setJsResponseTimeout,
+  setMaxBodyBytes,
+} = require("brahma-firelight");
 
 const app = createApp();
+
+// save production from disasters by locking in Rust
+// defaults to 30 seconds and 4mb limit.
+// set 2 minutes timeout (120 seconds)
+setJsResponseTimeout(120);
+
+// set max body to 50 MiB
+setMaxBodyBytes(50 * 1024 * 1024); // 52_428_800
+
+console.log("timeout secs:", getJsResponseTimeout()); // prints 120
+console.log("max body bytes:", getMaxBodyBytes()); // prints 52428800
 
 // CORS config
 app.use((req, res, next) => {
@@ -150,11 +167,6 @@ app.get("/time", async (req) => {
 // To send HTML response
 app.get("/page", (req, res) => {
   res.html(`<h1>Hello HTML</h1><p>Served by Brahma-JS id: ${req.reqId}</p>`);
-});
-
-// to return body no overhead very fast as text
-app.post("/json", (req, res) => {
-  res.text(req.body);
 });
 
 app.post("/submit", (req, res) => {

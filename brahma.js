@@ -384,8 +384,8 @@ if (!nativeBinding) {
   if (loadErrors.length > 0) {
     throw new Error(
       `Cannot find native binding. ` +
-      `npm has a bug related to optional dependencies (https://github.com/npm/cli/issues/4828). ` +
-      'Please try `npm i` again after removing both package-lock.json and node_modules directory.',
+        `npm has a bug related to optional dependencies (https://github.com/npm/cli/issues/4828). ` +
+        'Please try `npm i` again after removing both package-lock.json and node_modules directory.',
       { cause: loadErrors }
     )
   }
@@ -393,6 +393,10 @@ if (!nativeBinding) {
 }
 
 module.exports = nativeBinding
+module.exports.getJsResponseTimeout = nativeBinding.getJsResponseTimeout
+module.exports.getMaxBodyBytes = nativeBinding.getMaxBodyBytes
 module.exports.registerJsCallback = nativeBinding.registerJsCallback
 module.exports.respond = nativeBinding.respond
+module.exports.setJsResponseTimeout = nativeBinding.setJsResponseTimeout
+module.exports.setMaxBodyBytes = nativeBinding.setMaxBodyBytes
 module.exports.startServer = nativeBinding.startServer
