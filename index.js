@@ -3,7 +3,7 @@
 // BrahmaJS — Ultra-fast Node.js framework powered by Rust (via NAPI-RS)
 // Author: condensed for performance & clarity
 
-const { startServer, registerJsCallback, respond, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes } = require('./index'); // native addon
+const { startServer, registerJsCallback, respond, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes } = require('./brahma'); // native addon
 
 function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'); }
 function compilePath(path) {
