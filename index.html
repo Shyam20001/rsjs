@@ -2,241 +2,236 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Brahma-JS — Docs & Quick Reference</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Brahma-JS — Docs & Quick Reference</title>
 
-        :root {
-            --bg-deep: #000814;
-            --panel: rgba(6, 18, 34, 0.9);
-            --muted: #a8cfff;
-            --accent: #4ac0ff;
-            --code-bg: #000000;
-            --code-text: #ffffff;
-        }
+  <!-- Font & Prism -->
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-vsc-dark-plus.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
 
-        html,
-        body {
-            height: 100%;
-            margin: 0
-        }
+  <style>
+    :root {
+      --bg-deep: #000814;
+      --panel: rgba(6, 18, 34, 0.9);
+      --muted: #a8cfff;
+      --accent: #4ac0ff;
+      --code-bg: #000000;
+    }
 
-        body {
-            font-family: 'Fira Code', monospace;
-            background:
-                radial-gradient(circle at 10% 10%, rgba(74, 192, 255, 0.03), transparent 8%),
-                linear-gradient(180deg, #001226, #000814 60%);
-            color: var(--muted);
-            padding: 28px;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+    }
 
-        header {
-            text-align: center;
-            margin-bottom: 24px
-        }
+    body {
+      font-family: 'Fira Code', monospace;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(74, 192, 255, 0.03), transparent 8%),
+        linear-gradient(180deg, #001226, #000814 60%);
+      color: var(--muted);
+      padding: 28px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
 
-        .logo {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 100px;
-            height: 100px;
-            border-radius: 60px;
-            background: linear-gradient(180deg, var(--accent), #000000);
-            font-size: 3rem;
-            box-shadow: 0 8px 30px rgba(26, 234, 26, 0.25);
-            margin-bottom: 10px;
-        }
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
 
-        h1 {
-            margin: 8px 0 4px;
-            color: #9fe6ff;
-            font-size: 2.2rem
-        }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100px;
+      height: 100px;
+      border-radius: 60px;
+      background: linear-gradient(180deg, var(--accent), #000000);
+      font-size: 3rem;
+      box-shadow: 0 8px 30px rgba(26, 234, 26, 0.25);
+      margin-bottom: 10px;
+    }
 
-        p.lead {
-            margin: 0;
-            color: #9fcfff;
-            font-size: 1rem
-        }
+    h1 {
+      margin: 8px 0 4px;
+      color: #9fe6ff;
+      font-size: 2.2rem;
+    }
 
-        .logo-links {
-            display: flex;
-            gap: 14px;
-            justify-content: center;
-            margin-top: 14px;
-            align-items: center
-        }
+    p.lead {
+      margin: 0;
+      color: #9fcfff;
+      font-size: 1rem;
+    }
 
-        .logo-links a img {
-            height: 34px;
-            filter: drop-shadow(0 6px 18px rgba(0, 150, 255, 0.08));
-            transition: transform .18s
-        }
+    .logo-links {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      margin-top: 14px;
+      align-items: center;
+    }
 
-        .logo-links a img:hover {
-            transform: scale(1.08)
-        }
+    .logo-links a img {
+      height: 34px;
+      filter: drop-shadow(0 6px 18px rgba(0, 150, 255, 0.08));
+      transition: transform .18s;
+    }
 
-        main {
-            max-width: 980px;
-            margin: 26px auto;
-            display: grid;
-            gap: 18px
-        }
+    .logo-links a img:hover {
+      transform: scale(1.08);
+    }
 
-        section.card {
-            background: var(--panel);
-            padding: 22px;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.02)
-        }
+    main {
+      max-width: 980px;
+      margin: 26px auto;
+      display: grid;
+      gap: 18px;
+    }
 
-        h2 {
-            color: var(--accent);
-            margin: 0 0 10px;
-            padding-left: 8px;
-            border-left: 3px solid rgba(74, 192, 255, 0.18)
-        }
+    section.card {
+      background: var(--panel);
+      padding: 22px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.02);
+    }
 
-        p {
-            margin: 8px 0;
-            color: var(--muted)
-        }
+    h2 {
+      color: var(--accent);
+      margin: 0 0 10px;
+      padding-left: 8px;
+      border-left: 3px solid rgba(74, 192, 255, 0.18);
+    }
 
-        pre {
-            background: var(--code-bg);
-            color: var(--code-text);
-            padding: 16px;
-            border-radius: 10px;
-            overflow: auto;
-            position: relative;
-            font-size: 0.95rem;
-            box-shadow: inset 0 -12px 40px rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            line-height: 1.5;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
+    pre {
+      position: relative;
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 0.95rem;
+      box-shadow: inset 0 -12px 40px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      overflow: auto;
+    }
 
-        pre code {
-            display: block;
-            color: var(--code-text)
-        }
+    pre code {
+      font-family: 'Fira Code', monospace;
+    }
 
-        .copy-btn {
-            position: absolute;
-            right: 10px;
-            top: 10px;
-            background: #06283d;
-            color: #bfe9ff;
-            border: 0;
-            padding: 6px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 0.85rem;
-            transition: all .15s;
-        }
+    .copy-btn {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      background: #06283d;
+      color: #bfe9ff;
+      border: 0;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.85rem;
+      transition: all .15s;
+    }
 
-        .copy-btn:hover {
-            transform: translateY(-1px);
-            background: #0a4b6c
-        }
+    .copy-btn:hover {
+      transform: translateY(-1px);
+      background: #0a4b6c;
+    }
 
-        .iframe-wrap {
-            position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            background: #00101a;
-            box-shadow: inset 0 0 80px rgba(0, 80, 150, 0.08);
-            height: 720px;
-            margin-top: 16px
-        }
+    .iframe-wrap {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      background: #00101a;
+      box-shadow: inset 0 0 80px rgba(0, 80, 150, 0.08);
+      height: 720px;
+      margin-top: 16px;
+    }
 
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: 0;
-            display: block;
-            background: #00101a
-        }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #00101a;
+    }
 
-        .socket-badge {
-            display: flex;
-            justify-content: center;
-            margin: 18px 0
-        }
+    .socket-badge {
+      display: flex;
+      justify-content: center;
+      margin: 18px 0;
+    }
 
-        .story {
-            padding: 28px;
-            text-align: center;
-            background: linear-gradient(180deg, rgba(4, 12, 22, 0.6), rgba(6, 10, 18, 0.6));
-            border-radius: 12px;
-            color: #bfeaff
-        }
+    .story {
+      padding: 28px;
+      text-align: center;
+      background: linear-gradient(180deg, rgba(4, 12, 22, 0.6), rgba(6, 10, 18, 0.6));
+      border-radius: 12px;
+      color: #bfeaff;
+    }
 
-        footer {
-            text-align: center;
-            color: #7fc9ff;
-            margin-top: 18px;
-            padding-bottom: 40px
-        }
+    footer {
+      text-align: center;
+      color: #7fc9ff;
+      margin-top: 18px;
+      padding-bottom: 40px;
+    }
 
-        @media(max-width:720px) {
-            .logo {
-                width: 80px;
-                height: 80px;
-                font-size: 2.5rem
-            }
+    @media(max-width:720px) {
+      .logo {
+        width: 80px;
+        height: 80px;
+        font-size: 2.5rem;
+      }
 
-            h1 {
-                font-size: 1.7rem
-            }
+      h1 {
+        font-size: 1.7rem;
+      }
 
-            iframe {
-                height: 520px
-            }
-        }
-    </style>
+      iframe {
+        height: 520px;
+      }
+    }
+  </style>
 </head>
 
 <body>
-    <header>
-        <div class="logo">🗿</div>
-        <h1>Brahma-JS (brahma-firelight)</h1>
-        <p class="lead">JavaScript convenience, turbo-charged by Rust — Express-like middleware on Tokio + Hyper.</p>
+  <header>
+    <div class="logo">🗿</div>
+    <h1>Brahma-JS (brahma-firelight)</h1>
+    <p class="lead">JavaScript convenience, turbo-charged by Rust — Express-like middleware on Tokio + Hyper.</p>
 
-        <div class="logo-links">
-            <a href="https://www.npmjs.com/package/brahma-firelight" target="_blank"><img
-                    src="https://upload.wikimedia.org/wikipedia/commons/d/db/Npm-logo.svg" alt="NPM" /></a>
-            <a href="https://github.com/Shyam20001/rsjs" target="_blank"><img
-                    src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg"
-                    alt="GitHub" /></a>
-            <a href="https://socket.dev/npm/package/brahma-firelight" target="_blank"><img
-                    src="https://socket.dev/_next/image?url=%2Fimages%2Flogo-280x80.png&w=256&q=75"
-                    alt="Socket.dev" /></a>
-        </div>
-    </header>
+    <div class="logo-links">
+      <a href="https://www.npmjs.com/package/brahma-firelight" target="_blank"><img
+          src="https://upload.wikimedia.org/wikipedia/commons/d/db/Npm-logo.svg" alt="NPM" /></a>
+      <a href="https://github.com/Shyam20001/rsjs" target="_blank"><img
+          src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" alt="GitHub" /></a>
+      <a href="https://socket.dev/npm/package/brahma-firelight" target="_blank"><img
+          src="https://socket.dev/_next/image?url=%2Fimages%2Flogo-280x80.png&w=256&q=75" alt="Socket.dev" /></a>
+    </div>
+  </header>
 
-    <main>
-        <section class="card">
-            <h2>The Vision</h2>
-            <p><strong>Brahma-JS</strong> brings Rust-level networking performance to JavaScript developers — no Rust
-                knowledge needed. Deploy precompiled binaries, write JS handlers, and get production-grade concurrency
-                instantly.</p>
-        </section>
+  <main>
+    <section class="card">
+      <h2>The Vision</h2>
+      <p><strong>Brahma-JS</strong> brings Rust-level networking performance to JavaScript developers — no Rust
+        knowledge needed. Deploy precompiled binaries, write JS handlers, and get production-grade concurrency
+        instantly.</p>
+    </section>
 
-        <section class="card">
-            <h2>Benchmarks</h2>
-            <pre><code id="wrk-snippet">
-// Benchmark (wrk, Intel® i5-12450H, 200 connections)
+    <section class="card">
+      <h2>Benchmarks</h2>
+      <pre><code class="language-bash" id="wrk-snippet">
+# Benchmark (wrk, Intel® i5-12450H, 200 connections)
 Running 10s test @ http://127.0.0.1:2000/hi
 1 threads and 200 connections
 Thread Stats   Avg      Stdev     Max   +/- Stdev
@@ -245,35 +240,33 @@ Req/Sec   131.57k     9.13k  146.78k    79.00%
 → Sustains ~130k requests/sec with <2ms latency.
       </code><button class="copy-btn" data-target="wrk-snippet">Copy</button></pre>
 
-            <div class="socket-badge">
-                <a href="https://socket.dev/npm/package/brahma-firelight" target="_blank">
-                    <img src="https://badge.socket.dev/npm/package/brahma-firelight/1.5.16"
-                        alt="Socket.dev Score 100/100" />
-                </a>
-            </div>
+      <div class="socket-badge">
+        <a href="https://socket.dev/npm/package/brahma-firelight" target="_blank">
+          <img src="https://badge.socket.dev/npm/package/brahma-firelight/1.5.16"
+            alt="Socket.dev Score 100/100" />
+        </a>
+      </div>
 
-            <div class="iframe-wrap">
-                <iframe src="https://web-frameworks-benchmark.netlify.app/result?asc=0&l=javascript&order_by=level64"
-                    loading="lazy" title="Web Frameworks Benchmark"></iframe>
-            </div>
-        </section>
+      <div class="iframe-wrap">
+        <iframe src="https://web-frameworks-benchmark.netlify.app/result?asc=0&l=javascript&order_by=level64"
+          loading="lazy" title="Web Frameworks Benchmark"></iframe>
+      </div>
+    </section>
 
-        <section class="card">
-            <h2>Installation</h2>
-            <pre><code id="install-snippet">
+    <section class="card">
+      <h2>Installation</h2>
+      <pre><code class="language-bash" id="install-snippet">
 # Install via npm or other managers
 npm install brahma-firelight
 yarn add brahma-firelight
 pnpm add brahma-firelight
 bun add brahma-firelight
       </code><button class="copy-btn" data-target="install-snippet">Copy</button></pre>
-        </section>
+    </section>
 
-        <!-- Quick Start split sections -->
-        <section class="card">
-            <h2>Initialize the App</h2>
-            <p>Create and configure the Brahma app, including timeouts and max body size.</p>
-            <pre><code id="setup-snippet">
+    <section class="card">
+      <h2>Initialize the App</h2>
+      <pre><code class="language-js" id="setup-snippet">
 const {
   createApp,
   getJsResponseTimeout,
@@ -291,12 +284,11 @@ setMaxBodyBytes(50 * 1024 * 1024);
 console.log("timeout secs:", getJsResponseTimeout());
 console.log("max body bytes:", getMaxBodyBytes());
       </code><button class="copy-btn" data-target="setup-snippet">Copy</button></pre>
-        </section>
+    </section>
 
-        <section class="card">
-            <h2>Middleware</h2>
-            <p>Add reusable layers such as CORS handling and authentication.</p>
-            <pre><code id="middleware-snippet">
+    <section class="card">
+      <h2>Middleware</h2>
+      <pre><code class="language-js" id="middleware-snippet">
 // CORS Middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin;
@@ -318,22 +310,20 @@ function authMiddleware(req, res, next) {
   next();
 }
       </code><button class="copy-btn" data-target="middleware-snippet">Copy</button></pre>
-        </section>
+    </section>
 
-        <section class="card">
-            <h2>Utility Functions</h2>
-            <p>Define small helpers for async logic.</p>
-            <pre><code id="util-snippet">
+    <section class="card">
+      <h2>Utility Functions</h2>
+      <pre><code class="language-js" id="util-snippet">
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
       </code><button class="copy-btn" data-target="util-snippet">Copy</button></pre>
-        </section>
+    </section>
 
-        <section class="card">
-            <h2>Routes</h2>
-            <p>Define endpoints for JSON, HTML, and async responses.</p>
-            <pre><code id="routes-snippet">
+    <section class="card">
+      <h2>Routes</h2>
+      <pre><code class="language-js" id="routes-snippet">
 app.get("/hi", (req, res) => {
   res.json({ message: "Hello World from Brahma-JS!" });
 });
@@ -357,11 +347,11 @@ app.post("/submit", (req, res) => {
   res.json(formData, 201);
 });
       </code><button class="copy-btn" data-target="routes-snippet">Copy</button></pre>
-        </section>
+    </section>
 
-        <section class="card">
-            <h2>Cookies & Redirects</h2>
-            <pre><code id="cookies-snippet">
+    <section class="card">
+      <h2>Cookies & Redirects</h2>
+      <pre><code class="language-js" id="cookies-snippet">
 app.get("/set-cookies", (req, res) => {
   res.send(
     200,
@@ -374,11 +364,11 @@ app.get("/set-cookies", (req, res) => {
 app.get("/redirect", (req, res) => res.redirect("https://google.com"));
 app.post("/protected", authMiddleware, (req, res) => res.json({ success: true }));
       </code><button class="copy-btn" data-target="cookies-snippet">Copy</button></pre>
-        </section>
+    </section>
 
-        <section class="card">
-            <h2>Listen & Shutdown</h2>
-            <pre><code id="listen-snippet">
+    <section class="card">
+      <h2>Listen & Shutdown</h2>
+      <pre><code class="language-js" id="listen-snippet">
 app.listen("0.0.0.0", 2000, () => {
   console.log("⚡ Server running on port 2000");
 });
@@ -395,39 +385,39 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
       </code><button class="copy-btn" data-target="listen-snippet">Copy</button></pre>
-        </section>
+    </section>
 
-        <section class="card story">
-            <h2>🌌 The Brahma Story</h2>
-            <p>Born from late-night experiments, <strong>Brahma-JS</strong> merges Rust’s concurrency with JS
-                simplicity. Every request is handled in a non-blocking async loop powered by Tokio + Hyper — all wrapped
-                behind a familiar Express-like interface.</p>
-        </section>
+    <section class="card story">
+      <h2>🌌 The Brahma Story</h2>
+      <p>Born from late-night experiments, <strong>Brahma-JS</strong> merges Rust’s concurrency with JS
+        simplicity. Every request is handled in a non-blocking async loop powered by Tokio + Hyper — all wrapped
+        behind a familiar Express-like interface.</p>
+    </section>
 
-        <footer>
-            <p>😎 Crafted with Rust for JS devs who deserve speed 🔥</p>
-            © <span id="year"></span> Brahma-JS Project. All Rights Reserved.
-        </footer>
-    </main>
+    <footer>
+      <p>😎 Crafted with Rust for JS devs who deserve speed 🔥</p>
+      © <span id="year"></span> Brahma-JS Project. All Rights Reserved.
+    </footer>
+  </main>
 
-    <script>
-        document.getElementById("year").textContent = new Date().getFullYear();
-        document.querySelectorAll('.copy-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const el = document.getElementById(btn.dataset.target);
-                if (!el) return;
-                const txt = el.innerText.trim();
-                try {
-                    await navigator.clipboard.writeText(txt);
-                    btn.textContent = 'Copied!';
-                    btn.style.background = '#0077cc';
-                } catch (e) {
-                    btn.textContent = 'Copy failed';
-                }
-                setTimeout(() => { btn.textContent = 'Copy'; btn.style.background = ''; }, 1400);
-            });
-        });
-    </script>
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const el = document.getElementById(btn.dataset.target);
+        if (!el) return;
+        const txt = el.innerText.trim();
+        try {
+          await navigator.clipboard.writeText(txt);
+          btn.textContent = 'Copied!';
+          btn.style.background = '#0077cc';
+        } catch {
+          btn.textContent = 'Copy failed';
+        }
+        setTimeout(() => { btn.textContent = 'Copy'; btn.style.background = ''; }, 1400);
+      });
+    });
+  </script>
 </body>
 
 </html>
