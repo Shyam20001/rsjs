@@ -1,423 +1,205 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Brahma-JS — Docs & Quick Reference</title>
-
-  <!-- Font & Prism -->
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap" rel="stylesheet" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-vsc-dark-plus.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-vsc-dark-plus.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
 
   <style>
     :root {
-      --bg-deep: #000814;
-      --panel: rgba(6, 18, 34, 0.9);
-      --muted: #a8cfff;
-      --accent: #4ac0ff;
-      --code-bg: #000000;
+      --bg:#000814;
+      --panel:rgba(6,18,34,.9);
+      --accent:#4ac0ff;
+      --muted:#a8cfff;
+      --code-bg:#00101a;
     }
-
-    html,
-    body {
-      height: 100%;
-      margin: 0;
+    *{box-sizing:border-box;}
+    html,body{margin:0;padding:0;}
+    body{
+      font-family:'Fira Code',monospace;
+      background:linear-gradient(180deg,#001226,#000814 70%);
+      color:var(--muted);
+      padding:16px;
+      overflow-x:hidden;
+      word-break:break-word;
     }
-
-    body {
-      font-family: 'Fira Code', monospace;
-      background:
-        radial-gradient(circle at 10% 10%, rgba(74, 192, 255, 0.03), transparent 8%),
-        linear-gradient(180deg, #001226, #000814 60%);
-      color: var(--muted);
-      padding: 28px;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+    header{text-align:center;margin-bottom:24px;}
+    .logo{
+      display:inline-flex;align-items:center;justify-content:center;
+      width:80px;height:80px;border-radius:50%;
+      background:linear-gradient(180deg,var(--accent),#000);
+      font-size:2.5rem;
+      box-shadow:0 0 20px rgba(74,192,255,.3);
+      margin-bottom:8px;
     }
-
-    header {
-      text-align: center;
-      margin-bottom: 24px;
+    h1{margin:8px 0 4px;color:#9fe6ff;font-size:1.7rem;}
+    p.lead{margin:0;color:#9fcfff;font-size:.9rem;}
+    .logo-links{display:flex;gap:12px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
+    .logo-links a img{height:32px;transition:transform .2s;}
+    .logo-links a img:hover{transform:scale(1.08);}
+    main{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:16px;}
+    section.card{
+      background:var(--panel);
+      padding:18px 14px;
+      border-radius:12px;
+      box-shadow:0 0 30px rgba(0,0,0,.6);
+      border:1px solid rgba(255,255,255,.05);
     }
-
-    .logo {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 100px;
-      height: 100px;
-      border-radius: 60px;
-      background: linear-gradient(180deg, var(--accent), #000000);
-      font-size: 3rem;
-      box-shadow: 0 8px 30px rgba(26, 234, 26, 0.25);
-      margin-bottom: 10px;
+    h2{
+      color:var(--accent);
+      font-size:1.1rem;
+      border-left:3px solid rgba(74,192,255,.3);
+      padding-left:8px;
+      margin:0 0 8px;
     }
-
-    h1 {
-      margin: 8px 0 4px;
-      color: #9fe6ff;
-      font-size: 2.2rem;
+    pre{
+      position:relative;
+      background:var(--code-bg);
+      border-radius:10px;
+      padding:12px;
+      font-size:.85rem;
+      border:1px solid rgba(255,255,255,.05);
+      white-space:pre-wrap;
+      word-wrap:break-word;
+      overflow-x:auto;
     }
-
-    p.lead {
-      margin: 0;
-      color: #9fcfff;
-      font-size: 1rem;
+    .copy-btn{
+      position:absolute;
+      top:8px;right:8px;
+      background:#06283d;
+      color:#bfe9ff;
+      border:0;
+      padding:4px 8px;
+      border-radius:6px;
+      font-size:.75rem;
+      cursor:pointer;
     }
-
-    .logo-links {
-      display: flex;
-      gap: 14px;
-      justify-content: center;
-      margin-top: 14px;
-      align-items: center;
-    }
-
-    .logo-links a img {
-      height: 34px;
-      filter: drop-shadow(0 6px 18px rgba(0, 150, 255, 0.08));
-      transition: transform .18s;
-    }
-
-    .logo-links a img:hover {
-      transform: scale(1.08);
-    }
-
-    main {
-      max-width: 980px;
-      margin: 26px auto;
-      display: grid;
-      gap: 18px;
-    }
-
-    section.card {
-      background: var(--panel);
-      padding: 22px;
-      border-radius: 12px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.02);
-    }
-
-    h2 {
-      color: var(--accent);
-      margin: 0 0 10px;
-      padding-left: 8px;
-      border-left: 3px solid rgba(74, 192, 255, 0.18);
-    }
-
-    pre {
-      position: relative;
-      background: var(--code-bg);
-      border-radius: 10px;
-      padding: 16px;
-      font-size: 0.95rem;
-      box-shadow: inset 0 -12px 40px rgba(0, 0, 0, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.03);
-      overflow: auto;
-    }
-
-    pre code {
-      font-family: 'Fira Code', monospace;
-    }
-
-    .copy-btn {
-      position: absolute;
-      right: 10px;
-      top: 10px;
-      background: #06283d;
-      color: #bfe9ff;
-      border: 0;
-      padding: 6px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 700;
-      font-size: 0.85rem;
-      transition: all .15s;
-    }
-
-    .copy-btn:hover {
-      transform: translateY(-1px);
-      background: #0a4b6c;
-    }
-
-    .iframe-wrap {
-      position: relative;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.03);
-      background: #00101a;
-      box-shadow: inset 0 0 80px rgba(0, 80, 150, 0.08);
-      height: 720px;
-      margin-top: 16px;
-    }
-
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: 0;
-      display: block;
-      background: #00101a;
-    }
-
-    .socket-badge {
-      display: flex;
-      justify-content: center;
-      margin: 18px 0;
-    }
-
-    .story {
-      padding: 28px;
-      text-align: center;
-      background: linear-gradient(180deg, rgba(4, 12, 22, 0.6), rgba(6, 10, 18, 0.6));
-      border-radius: 12px;
-      color: #bfeaff;
-    }
-
-    footer {
-      text-align: center;
-      color: #7fc9ff;
-      margin-top: 18px;
-      padding-bottom: 40px;
-    }
-
-    @media(max-width:720px) {
-      .logo {
-        width: 80px;
-        height: 80px;
-        font-size: 2.5rem;
-      }
-
-      h1 {
-        font-size: 1.7rem;
-      }
-
-      iframe {
-        height: 520px;
-      }
+    .copy-btn:hover{background:#0a4b6c;}
+    iframe{width:100%;border:0;border-radius:10px;height:500px;background:#000;}
+    .story{text-align:center;padding:20px;border-radius:10px;background:#010f1d;}
+    footer{text-align:center;font-size:.85rem;color:#88d3ff;margin-top:20px;}
+    @media(max-width:600px){
+      h1{font-size:1.4rem;}
+      p.lead{font-size:.8rem;}
+      section.card{padding:14px 12px;}
+      pre{font-size:.75rem;padding:10px;}
+      iframe{height:360px;}
     }
   </style>
 </head>
-
 <body>
-  <header>
-    <div class="logo">🗿</div>
-    <h1>Brahma-JS (brahma-firelight)</h1>
-    <p class="lead">JavaScript convenience, turbo-charged by Rust — Express-like middleware on Tokio + Hyper.</p>
 
-    <div class="logo-links">
-      <a href="https://www.npmjs.com/package/brahma-firelight" target="_blank"><img
-          src="https://upload.wikimedia.org/wikipedia/commons/d/db/Npm-logo.svg" alt="NPM" /></a>
-      <a href="https://github.com/Shyam20001/rsjs" target="_blank"><img
-          src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" alt="GitHub" /></a>
-      <a href="https://socket.dev/npm/package/brahma-firelight" target="_blank"><img
-          src="https://socket.dev/_next/image?url=%2Fimages%2Flogo-280x80.png&w=256&q=75" alt="Socket.dev" /></a>
-    </div>
-  </header>
+<header>
+  <div class="logo">🗿</div>
+  <h1>Brahma-JS (brahma-firelight)</h1>
+  <p class="lead">JavaScript convenience, Rust-powered speed — Express-like feel on Tokio + Hyper.</p>
+  <div class="logo-links">
+    <a href="https://www.npmjs.com/package/brahma-firelight" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/d/db/Npm-logo.svg"></a>
+    <a href="https://github.com/Shyam20001/rsjs" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg"></a>
+    <a href="https://socket.dev/npm/package/brahma-firelight" target="_blank"><img src="https://socket.dev/_next/image?url=%2Fimages%2Flogo-280x80.png&w=256&q=75"></a>
+  </div>
+</header>
 
-  <main>
-    <section class="card">
-      <h2>The Vision</h2>
-      <p><strong>Brahma-JS</strong> brings Rust-level networking performance to JavaScript developers — no Rust
-        knowledge needed. Deploy precompiled binaries, write JS handlers, and get production-grade concurrency
-        instantly.</p>
-    </section>
+<main>
 
-    <section class="card">
-      <h2>Benchmarks</h2>
-      <pre><code class="language-bash" id="wrk-snippet">
-# Benchmark (wrk, Intel® i5-12450H, 200 connections)
-Running 10s test @ http://127.0.0.1:2000/hi
-1 threads and 200 connections
-Thread Stats   Avg      Stdev     Max   +/- Stdev
-Latency     1.51ms  479.16us   7.89ms   78.17%
-Req/Sec   131.57k     9.13k  146.78k    79.00%
-→ Sustains ~130k requests/sec with <2ms latency.
-      </code><button class="copy-btn" data-target="wrk-snippet">Copy</button></pre>
-
-      <div class="socket-badge">
-        <a href="https://socket.dev/npm/package/brahma-firelight" target="_blank">
-          <img src="https://badge.socket.dev/npm/package/brahma-firelight/1.5.16"
-            alt="Socket.dev Score 100/100" />
-        </a>
-      </div>
-
-      <div class="iframe-wrap">
-        <iframe src="https://web-frameworks-benchmark.netlify.app/result?asc=0&l=javascript&order_by=level64"
-          loading="lazy" title="Web Frameworks Benchmark"></iframe>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Installation</h2>
-      <pre><code class="language-bash" id="install-snippet">
-# Install via npm or other managers
+<section class="card">
+<h2>Install</h2>
+<pre><code class="language-bash" id="install">
 npm install brahma-firelight
 yarn add brahma-firelight
-pnpm add brahma-firelight
-bun add brahma-firelight
-      </code><button class="copy-btn" data-target="install-snippet">Copy</button></pre>
-    </section>
+</code><button class="copy-btn" data-target="install">Copy</button></pre>
+</section>
 
-    <section class="card">
-      <h2>Initialize the App</h2>
-      <pre><code class="language-js" id="setup-snippet">
-const {
-  createApp,
-  getJsResponseTimeout,
-  getMaxBodyBytes,
-  setJsResponseTimeout,
-  setMaxBodyBytes,
-} = require("brahma-firelight");
-
+<section class="card">
+<h2>Initialize</h2>
+<pre><code class="language-js" id="init">
+const { createApp, setJsResponseTimeout } = require("brahma-firelight");
 const app = createApp();
+setJsResponseTimeout(60);
+</code><button class="copy-btn" data-target="init">Copy</button></pre>
+</section>
 
-// Global server rules
-setJsResponseTimeout(120);
-setMaxBodyBytes(50 * 1024 * 1024);
-
-console.log("timeout secs:", getJsResponseTimeout());
-console.log("max body bytes:", getMaxBodyBytes());
-      </code><button class="copy-btn" data-target="setup-snippet">Copy</button></pre>
-    </section>
-
-    <section class="card">
-      <h2>Middleware</h2>
-      <pre><code class="language-js" id="middleware-snippet">
-// CORS Middleware
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  } else {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-  }
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  if (req.method === "OPTIONS") res.send(204);
+<section class="card">
+<h2>Middleware</h2>
+<pre><code class="language-js" id="mid">
+app.use((req,res,next)=>{
+  res.setHeader("Access-Control-Allow-Origin","*");
+  res.setHeader("Access-Control-Allow-Methods","GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers","Content-Type, Authorization");
+  if(req.method==="OPTIONS") res.send(204);
   else next();
 });
+</code><button class="copy-btn" data-target="mid">Copy</button></pre>
+</section>
 
-// Auth Middleware
-function authMiddleware(req, res, next) {
-  if (!req.headers["authorization"]) return res.text("Unauthorized", 401);
-  next();
-}
-      </code><button class="copy-btn" data-target="middleware-snippet">Copy</button></pre>
-    </section>
+<section class="card">
+<h2>Routes</h2>
+<pre><code class="language-js" id="routes">
+app.get("/hi",(req,res)=>res.json({msg:"Hello from Brahma"}));
+app.post("/echo",(req,res)=>res.json(JSON.parse(req.body||"{}")));
+</code><button class="copy-btn" data-target="routes">Copy</button></pre>
+</section>
 
-    <section class="card">
-      <h2>Utility Functions</h2>
-      <pre><code class="language-js" id="util-snippet">
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-      </code><button class="copy-btn" data-target="util-snippet">Copy</button></pre>
-    </section>
-
-    <section class="card">
-      <h2>Routes</h2>
-      <pre><code class="language-js" id="routes-snippet">
-app.get("/hi", (req, res) => {
-  res.json({ message: "Hello World from Brahma-JS!" });
+<section class="card">
+<h2>Cookies & Redirects</h2>
+<pre><code class="language-js" id="cookies">
+app.get("/set",(req,res)=>{
+  res.send(200,{"Content-Type":"text/plain"},
+    ["a=1; Path=/; HttpOnly"],"cookies set");
 });
+app.get("/goto",(req,res)=>res.redirect("https://google.com"));
+</code><button class="copy-btn" data-target="cookies">Copy</button></pre>
+</section>
 
-app.get("/time", async (req) => {
-  await sleep(20000);
-  return {
-    status: 400,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ now: Date.now() }),
-  };
+<section class="card">
+<h2>Listen & Shutdown</h2>
+<pre><code class="language-js" id="listen">
+app.listen("0.0.0.0",2000,()=>console.log("Listening on 2000"));
+process.on("SIGINT",async()=>{await app.close(3000);process.exit(0);});
+</code><button class="copy-btn" data-target="listen">Copy</button></pre>
+</section>
+
+<section class="card">
+<h2>Benchmark</h2>
+<pre><code class="language-bash" id="bench">
+wrk -t4 -c200 -d10s http://127.0.0.1:2000/hi
+# ~130k req/sec, <2ms avg latency (i5-12450H)
+</code><button class="copy-btn" data-target="bench">Copy</button></pre>
+<iframe src="https://web-frameworks-benchmark.netlify.app/result?asc=0&l=javascript&order_by=level64"></iframe>
+</section>
+
+<section class="card story">
+<h2>🌌 The Brahma Story</h2>
+<p>Brahma-JS merges Rust concurrency with JS simplicity.  
+Write Express-style code, run it at native speed.  
+Each request is async, non-blocking, powered by Tokio + Hyper.</p>
+</section>
+
+<footer>
+<p>© <span id="year"></span> Brahma-JS Project. Built with ⚙️ Rust + 🧠 JS.</p>
+</footer>
+</main>
+
+<script>
+document.getElementById("year").textContent=new Date().getFullYear();
+document.querySelectorAll('.copy-btn').forEach(btn=>{
+  btn.addEventListener('click',async()=>{
+    const el=document.getElementById(btn.dataset.target);
+    const text=el.innerText.trim();
+    try{
+      await navigator.clipboard.writeText(text);
+      btn.textContent='Copied!';
+      btn.style.background='#0077cc';
+      setTimeout(()=>{btn.textContent='Copy';btn.style.background='';},1300);
+    }catch(e){btn.textContent='Fail';}
+  });
 });
-
-app.get("/page", (req, res) => {
-  res.html(`<h1>Hello HTML</h1><p>Served by Brahma-JS id: ${req.reqId}</p>`);
-});
-
-app.post("/submit", (req, res) => {
-  const formData = JSON.parse(req.body);
-  console.log("bodyData:", formData);
-  res.json(formData, 201);
-});
-      </code><button class="copy-btn" data-target="routes-snippet">Copy</button></pre>
-    </section>
-
-    <section class="card">
-      <h2>Cookies & Redirects</h2>
-      <pre><code class="language-js" id="cookies-snippet">
-app.get("/set-cookies", (req, res) => {
-  res.send(
-    200,
-    { "Content-Type": "text/plain" },
-    ["a=1; Path=/; HttpOnly", "b=2; Path=/; Secure; Max-Age=3600"],
-    "hello"
-  );
-});
-
-app.get("/redirect", (req, res) => res.redirect("https://google.com"));
-app.post("/protected", authMiddleware, (req, res) => res.json({ success: true }));
-      </code><button class="copy-btn" data-target="cookies-snippet">Copy</button></pre>
-    </section>
-
-    <section class="card">
-      <h2>Listen & Shutdown</h2>
-      <pre><code class="language-js" id="listen-snippet">
-app.listen("0.0.0.0", 2000, () => {
-  console.log("⚡ Server running on port 2000");
-});
-
-process.on('SIGINT', async () => {
-  console.log('SIGINT → shutting down...');
-  await app.close(5000);
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM → shutting down...');
-  await app.close(5000);
-  process.exit(0);
-});
-      </code><button class="copy-btn" data-target="listen-snippet">Copy</button></pre>
-    </section>
-
-    <section class="card story">
-      <h2>🌌 The Brahma Story</h2>
-      <p>Born from late-night experiments, <strong>Brahma-JS</strong> merges Rust’s concurrency with JS
-        simplicity. Every request is handled in a non-blocking async loop powered by Tokio + Hyper — all wrapped
-        behind a familiar Express-like interface.</p>
-    </section>
-
-    <footer>
-      <p>😎 Crafted with Rust for JS devs who deserve speed 🔥</p>
-      © <span id="year"></span> Brahma-JS Project. All Rights Reserved.
-    </footer>
-  </main>
-
-  <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
-    document.querySelectorAll('.copy-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const el = document.getElementById(btn.dataset.target);
-        if (!el) return;
-        const txt = el.innerText.trim();
-        try {
-          await navigator.clipboard.writeText(txt);
-          btn.textContent = 'Copied!';
-          btn.style.background = '#0077cc';
-        } catch {
-          btn.textContent = 'Copy failed';
-        }
-        setTimeout(() => { btn.textContent = 'Copy'; btn.style.background = ''; }, 1400);
-      });
-    });
-  </script>
+</script>
 </body>
-
 </html>
