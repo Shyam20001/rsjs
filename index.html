@@ -2,277 +2,432 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <title>Benchmarking Node.js Frameworks – Brahma-JS vs uWS vs Fastify vs Express</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Brahma-JS — Docs & Quick Reference</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
+
         :root {
-            --accent: #4a90e2;
-            --bg-light: #f9f9f9;
-            --card-bg: #fff;
-            --text-main: #333;
-            --text-dark: #222;
+            --bg-deep: #000814;
+            --panel: rgba(6, 18, 34, 0.9);
+            --muted: #a8cfff;
+            --accent: #4ac0ff;
+            --code-bg: #000000;
+            --code-text: #ffffff;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0
         }
 
         body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            margin: 2rem;
-            background-color: var(--bg-light);
-            color: var(--text-main);
+            font-family: 'Fira Code', monospace;
+            background:
+                radial-gradient(circle at 10% 10%, rgba(74, 192, 255, 0.03), transparent 8%),
+                linear-gradient(180deg, #001226, #000814 60%);
+            color: var(--muted);
+            padding: 28px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        h1,
-        h2,
-        h3 {
-            color: var(--text-dark);
+        header {
+            text-align: center;
+            margin-bottom: 24px
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100px;
+            height: 100px;
+            border-radius: 60px;
+            background: linear-gradient(180deg, var(--accent), #000000);
+            font-size: 3rem;
+            box-shadow: 0 8px 30px rgba(26, 234, 26, 0.25);
+            margin-bottom: 10px;
         }
 
         h1 {
-            font-size: 2rem;
-            margin-bottom: 1rem;
+            margin: 8px 0 4px;
+            color: #9fe6ff;
+            font-size: 2.2rem
         }
 
-        code {
-            background: #eee;
-            padding: 0.2em 0.4em;
-            border-radius: 4px;
-            font-size: 0.95em;
+        p.lead {
+            margin: 0;
+            color: #9fcfff;
+            font-size: 1rem
         }
 
-        img {
-            max-width: 600px;
-            width: 100%;
-            height: auto;
-            margin: 1rem 0;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            transition: transform 0.2s ease;
-            display: block;
+        .logo-links {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            margin-top: 14px;
+            align-items: center
         }
 
-        img:hover {
-            transform: scale(1.02);
+        .logo-links a img {
+            height: 34px;
+            filter: drop-shadow(0 6px 18px rgba(0, 150, 255, 0.08));
+            transition: transform .18s
         }
 
-        .framework {
-            background: var(--card-bg);
-            padding: 1.5rem;
+        .logo-links a img:hover {
+            transform: scale(1.08)
+        }
+
+        main {
+            max-width: 980px;
+            margin: 26px auto;
+            display: grid;
+            gap: 18px
+        }
+
+        section.card {
+            background: var(--panel);
+            padding: 22px;
             border-radius: 12px;
-            margin-bottom: 2.5rem;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
-            transition: box-shadow 0.2s ease;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.02)
         }
 
-        .framework:hover {
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-        }
-
-        .git-link {
-            font-size: 0.9em;
+        h2 {
             color: var(--accent);
-            text-decoration: none;
+            margin: 0 0 10px;
+            padding-left: 8px;
+            border-left: 3px solid rgba(74, 192, 255, 0.18)
         }
 
-        .git-link:hover {
-            text-decoration: underline;
+        p {
+            margin: 8px 0;
+            color: var(--muted)
         }
 
-        .highlight-box {
-            background: #f0f6ff;
-            border-left: 4px solid var(--accent);
-            padding: 1rem;
-            margin: 1rem 0;
-            border-radius: 6px;
-            font-size: 0.95em;
-        }
-
-        .cta-card {
-            text-align: center;
-            border: 2px solid var(--accent);
+        pre {
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 16px;
+            border-radius: 10px;
+            overflow: auto;
             position: relative;
-            overflow: hidden;
+            font-size: 0.95rem;
+            box-shadow: inset 0 -12px 40px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
-        .cta-card pre {
-            background: #b21d02;
-            color: #000000;
-            padding: 0.8rem 1rem;
-            border-radius: 6px;
-            font-size: 1rem;
-            margin: 1rem auto;
-            /* <-- centers the block horizontally */
+        pre code {
             display: block;
-            /* <-- make it a block element */
-            width: fit-content;
-            /* <-- ensures it shrinks to content width */
+            color: var(--code-text)
         }
 
-
-        .cta-btn {
-            display: inline-block;
-            background: linear-gradient(135deg, #4a90e2, #00c6ff);
-            color: #fff;
-            padding: 0.7rem 1.5rem;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            margin-top: 0.5rem;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0, 144, 255, 0.3);
-        }
-
-        .cta-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 18px rgba(0, 144, 255, 0.45);
-        }
-
-        /* Shine Effect */
-        .cta-btn::before {
-            content: "";
+        .copy-btn {
             position: absolute;
-            top: 0;
-            left: -75%;
-            width: 50%;
+            right: 10px;
+            top: 10px;
+            background: #06283d;
+            color: #bfe9ff;
+            border: 0;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.85rem;
+            transition: all .15s;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-1px);
+            background: #0a4b6c
+        }
+
+        .iframe-wrap {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            background: #00101a;
+            box-shadow: inset 0 0 80px rgba(0, 80, 150, 0.08);
+            height: 720px;
+            margin-top: 16px
+        }
+
+        iframe {
+            width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.4);
-            transform: skewX(-25deg);
+            border: 0;
+            display: block;
+            background: #00101a
         }
 
-        .cta-btn:hover::before {
-            animation: shine 0.9s forwards;
+        .socket-badge {
+            display: flex;
+            justify-content: center;
+            margin: 18px 0
         }
 
-        @keyframes shine {
-            100% {
-                left: 125%;
-            }
+        .story {
+            padding: 28px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(4, 12, 22, 0.6), rgba(6, 10, 18, 0.6));
+            border-radius: 12px;
+            color: #bfeaff
         }
-
 
         footer {
             text-align: center;
-            font-size: 0.85em;
-            color: #666;
-            margin-top: 3rem;
+            color: #7fc9ff;
+            margin-top: 18px;
+            padding-bottom: 40px
+        }
+
+        @media(max-width:720px) {
+            .logo {
+                width: 80px;
+                height: 80px;
+                font-size: 2.5rem
+            }
+
+            h1 {
+                font-size: 1.7rem
+            }
+
+            iframe {
+                height: 520px
+            }
         }
     </style>
 </head>
 
 <body>
-    <h1>🔬 Node.js Framework Benchmark – August 2025</h1>
-    <p>
-        Recently, I conducted a performance benchmark on four backend frameworks — <strong>Express</strong>,
-        <strong>Fastify</strong>, <strong>Brahma-JS</strong> (my own creation), and <strong>uWebSockets.js
-            (uws-js)</strong>. The tests were conducted using <code>autocannon</code> directly against each
-        live-deployed API on a minimal <strong>EC2 t2.micro</strong> instance.
-    </p>
+    <header>
+        <div class="logo">🗿</div>
+        <h1>Brahma-JS (brahma-firelight)</h1>
+        <p class="lead">JavaScript convenience, turbo-charged by Rust — Express-like middleware on Tokio + Hyper.</p>
 
-    <div class="highlight-box">
-        <strong>⚙️ Benchmark Setup:</strong><br>
-        • <code>autocannon</code> is a Node.js-based HTTP benchmarking tool, similar to <code>wrk</code>, designed to
-        generate high levels of concurrent requests.<br>
-        • Client-side load was generated with:<br>
-        &nbsp;&nbsp;– <strong>Connections:</strong> 100<br>
-        &nbsp;&nbsp;– <strong>Duration:</strong> 10s per test<br>
-        &nbsp;&nbsp;– <strong>Pipelining:</strong> 50<br>
-        &nbsp;&nbsp;– <strong>Workers:</strong> 2<br>
-        • Server environment: <strong>AWS EC2 t2.micro</strong> (1 vCPU, 1 GB RAM, EBS-backed SSD).<br>
-        • Since this instance has only a single CPU core (burstable), enabling clustering offers no advantage — all
-        benchmarks were run in a single-process mode.
-    </div>
-
-    <p>
-        Surprisingly, <strong>Express</strong> ended up as the lowest performing candidate, while
-        <strong>Fastify</strong> was slightly better. <strong>Brahma-JS</strong> performed impressively, though
-        <strong>uWS</strong> remained the fastest overall.
-    </p>
-
-    <hr>
-
-    <div class="framework">
-        <h2>🐇 Express.js</h2>
-        <p><strong>Git:</strong> <a class="git-link" href="https://github.com/expressjs/express"
-                target="_blank">https://github.com/expressjs/express</a></p>
-        <p>Express is well known for its simplicity, but it's not optimized for high concurrency or raw performance.</p>
-        <p><strong>📊 Results:</strong> <b>54k requests</b>, <b>~3k failed (timeouts)</b></p>
-        <img src="assets/express-js-screenshot.png" alt="Express-JS Screenshot">
-    </div>
-
-    <div class="framework">
-        <h2>⚡ Fastify</h2>
-        <p><strong>Git:</strong> <a class="git-link" href="https://github.com/fastify/fastify"
-                target="_blank">https://github.com/fastify/fastify</a></p>
-        <p>Fastify is a performance-focused alternative to Express. It showed a solid improvement over Express.</p>
-        <p><strong>📊 Results:</strong> <b>307k requests</b></p>
-        <img src="assets/fastify-js-scrennshot.png" alt="Fastify-JS Screenshot">
-    </div>
-
-    <div class="framework">
-        <h2>🌀 Brahma-JS (Custom Framework)</h2>
-        <p><strong>Git:</strong> <a class="git-link" href="https://github.com/Shyam20001/rsjs"
-                target="_blank">https://github.com/Shyam20001/rsjs</a></p>
-        <p>Brahma-JS is my own minimalist, high-performance Node.js framework. It uses a lean architecture and async
-            primitives. It performed impressively, close to uWS.</p>
-        <div class="highlight-box">
-            <strong>🔧 Runtime & Design:</strong><br>
-            • Core runtime powered by <code>Rust Tokio</code> (async runtime) + <code>Hyper</code> (HTTP engine)<br>
-            • Bound to Node.js via <b>But also can be used in Deno as well as Bun.</b>
-            • Binary-only distribution — no need to compile or manage dependencies<br>
-            • Designed as a “fire-and-forget” orchestrator with ultra-fast message routing<br>
-            • API surface aims to feel like <code>Express/Hono</code> while staying minimal
+        <div class="logo-links">
+            <a href="https://www.npmjs.com/package/brahma-firelight" target="_blank"><img
+                    src="https://upload.wikimedia.org/wikipedia/commons/d/db/Npm-logo.svg" alt="NPM" /></a>
+            <a href="https://github.com/Shyam20001/rsjs" target="_blank"><img
+                    src="https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg"
+                    alt="GitHub" /></a>
+            <a href="https://socket.dev/npm/package/brahma-firelight" target="_blank"><img
+                    src="https://socket.dev/_next/image?url=%2Fimages%2Flogo-280x80.png&w=256&q=75"
+                    alt="Socket.dev" /></a>
         </div>
-        <p><strong>📊 Results:</strong> <b>413k requests</b></p>
-        <img src="assets/brahma-js-screenshot.png" alt="Brahma-JS Screenshot">
-    </div>
+    </header>
 
-    <div class="framework">
-        <h2>🚀 uWebSockets.js (uws-js)</h2>
-        <p><strong>Git:</strong> <a class="git-link" href="https://github.com/uNetworking/uWebSockets.js"
-                target="_blank">https://github.com/uNetworking/uWebSockets.js</a></p>
-        <p>uWS is known for being one of the fastest web frameworks out there — built in C++ with Node.js bindings. Its
-            performance remains stellar, though its ergonomics aren’t as friendly as others.</p>
-        <p><strong>📊 Results:</strong> <b>456k requests</b></p>
-        <img src="assets/ultra-websockets-screenshot.png" alt="Ultra WebSockets Screenshot">
-    </div>
+    <main>
+        <section class="card">
+            <h2>The Vision</h2>
+            <p><strong>Brahma-JS</strong> brings Rust-level networking performance to JavaScript developers — no Rust
+                knowledge needed. Deploy precompiled binaries, write JS handlers, and get production-grade concurrency
+                instantly.</p>
+        </section>
 
-    <hr>
+        <section class="card">
+            <h2>Benchmarks</h2>
+            <pre><code id="wrk-snippet">
+// Benchmark (wrk, Intel® i5-12450H, 200 connections)
+Running 10s test @ http://127.0.0.1:2000/hi
+1 threads and 200 connections
+Thread Stats   Avg      Stdev     Max   +/- Stdev
+Latency     1.51ms  479.16us   7.89ms   78.17%
+Req/Sec   131.57k     9.13k  146.78k    79.00%
+→ Sustains ~130k requests/sec with <2ms latency.
+      </code><button class="copy-btn" data-target="wrk-snippet">Copy</button></pre>
 
-    <h2>📊 Summary</h2>
-    <ul>
-        <li><strong>1st Place:</strong> uWS (456k requests)</li>
-        <li><strong>2nd:</strong> Brahma-JS (413k requests)</li>
-        <li><strong>3rd:</strong> Fastify (307k requests)</li>
-        <li><strong>4th:</strong> Express (54k requests, 3k failures)</li>
-    </ul>
+            <div class="socket-badge">
+                <a href="https://socket.dev/npm/package/brahma-firelight" target="_blank">
+                    <img src="https://badge.socket.dev/npm/package/brahma-firelight/1.5.16"
+                        alt="Socket.dev Score 100/100" />
+                </a>
+            </div>
 
-    <p>
-        This test proves that raw performance isn’t always about using the most popular tool — thoughtful design and
-        minimal overhead in frameworks like Brahma-JS or uWS can bring massive benefits in constrained environments like
-        <code>t2.micro</code>.
-    </p>
-    <div class="framework cta-card">
-        <h2>🔥 Try Brahma-JS Right Now</h2>
-        <p>
-            Get started instantly with the NPM package:
-        </p>
-        <pre><code>npm i brahma-firelight</code></pre>
-        <a href="https://www.npmjs.com/package/brahma-firelight" target="_blank" class="cta-btn">
-            🌟 Explore on NPM
-        </a>
-    </div>
+            <div class="iframe-wrap">
+                <iframe src="https://web-frameworks-benchmark.netlify.app/result?asc=0&l=javascript&order_by=level64"
+                    loading="lazy" title="Web Frameworks Benchmark"></iframe>
+            </div>
+        </section>
 
+        <section class="card">
+            <h2>Installation</h2>
+            <pre><code id="install-snippet">
+# Install via npm or other managers
+npm install brahma-firelight
+yarn add brahma-firelight
+pnpm add brahma-firelight
+bun add brahma-firelight
+      </code><button class="copy-btn" data-target="install-snippet">Copy</button></pre>
+        </section>
 
-    <p>
-        Drop a star on the <a href="https://github.com/Shyam20001/rsjs" target="_blank">Brahma-JS GitHub repo</a> if
-        you're curious about its design or want to try it out!
-    </p>
+        <!-- Quick Start split sections -->
+        <section class="card">
+            <h2>Initialize the App</h2>
+            <p>Create and configure the Brahma app, including timeouts and max body size.</p>
+            <pre><code id="setup-snippet">
+const {
+  createApp,
+  getJsResponseTimeout,
+  getMaxBodyBytes,
+  setJsResponseTimeout,
+  setMaxBodyBytes,
+} = require("brahma-firelight");
 
-    <footer>
-        <p>Published: August 2025</p>
-    </footer>
+const app = createApp();
+
+// Global server rules
+setJsResponseTimeout(120);
+setMaxBodyBytes(50 * 1024 * 1024);
+
+console.log("timeout secs:", getJsResponseTimeout());
+console.log("max body bytes:", getMaxBodyBytes());
+      </code><button class="copy-btn" data-target="setup-snippet">Copy</button></pre>
+        </section>
+
+        <section class="card">
+            <h2>Middleware</h2>
+            <p>Add reusable layers such as CORS handling and authentication.</p>
+            <pre><code id="middleware-snippet">
+// CORS Middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  } else {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") res.send(204);
+  else next();
+});
+
+// Auth Middleware
+function authMiddleware(req, res, next) {
+  if (!req.headers["authorization"]) return res.text("Unauthorized", 401);
+  next();
+}
+      </code><button class="copy-btn" data-target="middleware-snippet">Copy</button></pre>
+        </section>
+
+        <section class="card">
+            <h2>Utility Functions</h2>
+            <p>Define small helpers for async logic.</p>
+            <pre><code id="util-snippet">
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+      </code><button class="copy-btn" data-target="util-snippet">Copy</button></pre>
+        </section>
+
+        <section class="card">
+            <h2>Routes</h2>
+            <p>Define endpoints for JSON, HTML, and async responses.</p>
+            <pre><code id="routes-snippet">
+app.get("/hi", (req, res) => {
+  res.json({ message: "Hello World from Brahma-JS!" });
+});
+
+app.get("/time", async (req) => {
+  await sleep(20000);
+  return {
+    status: 400,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ now: Date.now() }),
+  };
+});
+
+app.get("/page", (req, res) => {
+  res.html(`<h1>Hello HTML</h1><p>Served by Brahma-JS id: ${req.reqId}</p>`);
+});
+
+app.post("/submit", (req, res) => {
+  const formData = JSON.parse(req.body);
+  console.log("bodyData:", formData);
+  res.json(formData, 201);
+});
+      </code><button class="copy-btn" data-target="routes-snippet">Copy</button></pre>
+        </section>
+
+        <section class="card">
+            <h2>Cookies & Redirects</h2>
+            <pre><code id="cookies-snippet">
+app.get("/set-cookies", (req, res) => {
+  res.send(
+    200,
+    { "Content-Type": "text/plain" },
+    ["a=1; Path=/; HttpOnly", "b=2; Path=/; Secure; Max-Age=3600"],
+    "hello"
+  );
+});
+
+app.get("/redirect", (req, res) => res.redirect("https://google.com"));
+app.post("/protected", authMiddleware, (req, res) => res.json({ success: true }));
+      </code><button class="copy-btn" data-target="cookies-snippet">Copy</button></pre>
+        </section>
+
+        <section class="card">
+            <h2>Listen & Shutdown</h2>
+            <pre><code id="listen-snippet">
+app.listen("0.0.0.0", 2000, () => {
+  console.log("⚡ Server running on port 2000");
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT → shutting down...');
+  await app.close(5000);
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM → shutting down...');
+  await app.close(5000);
+  process.exit(0);
+});
+      </code><button class="copy-btn" data-target="listen-snippet">Copy</button></pre>
+        </section>
+
+        <section class="card story">
+            <h2>🌌 The Brahma Story</h2>
+            <p>Born from late-night experiments, <strong>Brahma-JS</strong> merges Rust’s concurrency with JS
+                simplicity. Every request is handled in a non-blocking async loop powered by Tokio + Hyper — all wrapped
+                behind a familiar Express-like interface.</p>
+        </section>
+
+        <footer>
+            <p>😎 Crafted with Rust for JS devs who deserve speed 🔥</p>
+            © <span id="year"></span> Brahma-JS Project. All Rights Reserved.
+        </footer>
+    </main>
+
+    <script>
+        document.getElementById("year").textContent = new Date().getFullYear();
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const el = document.getElementById(btn.dataset.target);
+                if (!el) return;
+                const txt = el.innerText.trim();
+                try {
+                    await navigator.clipboard.writeText(txt);
+                    btn.textContent = 'Copied!';
+                    btn.style.background = '#0077cc';
+                } catch (e) {
+                    btn.textContent = 'Copy failed';
+                }
+                setTimeout(() => { btn.textContent = 'Copy'; btn.style.background = ''; }, 1400);
+            });
+        });
+    </script>
 </body>
 
 </html>
