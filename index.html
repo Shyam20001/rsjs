@@ -58,6 +58,59 @@
       margin-bottom: 8px;
     }
 
+    iframe {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      height: 500px;
+      background: #000;
+    }
+
+    .iframe-wrapper {
+      background: #000;
+      /* solid dark backing */
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+    }
+
+
+    .glow-star {
+      text-align: center;
+      margin-top: 10px;
+      padding: 20px 0;
+    }
+
+    .star-btn {
+      display: inline-block;
+      background: linear-gradient(90deg, #4ac0ff, #0077ff);
+      color: #fff;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 12px 28px;
+      border-radius: 30px;
+      box-shadow: 0 0 20px rgba(74, 192, 255, 0.6), 0 0 40px rgba(74, 192, 255, 0.3);
+      transition: transform 0.25s, box-shadow 0.25s;
+      animation: glowPulse 2.5s infinite alternate;
+    }
+
+    .star-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 30px rgba(74, 192, 255, 0.9), 0 0 60px rgba(74, 192, 255, 0.4);
+    }
+
+    @keyframes glowPulse {
+      from {
+        box-shadow: 0 0 20px rgba(74, 192, 255, 0.6), 0 0 40px rgba(74, 192, 255, 0.3);
+      }
+
+      to {
+        box-shadow: 0 0 30px rgba(74, 192, 255, 0.9), 0 0 60px rgba(74, 192, 255, 0.4);
+      }
+    }
+
+
     h1 {
       margin: 8px 0 4px;
       color: #9fe6ff;
@@ -239,14 +292,16 @@ nypm add brahma-firelight
       <pre><code class="language-js" id="init">
 const { createApp, setJsResponseTimeout, setMaxBodyBytes } = require("brahma-firelight");
 const app = createApp();
-setJsResponseTimeout(60);
-setMaxBodyBytes(50 * 1024 * 1024);
+// This is Rust-Runtime config this works even node js event loop gets choked.
+setJsResponseTimeout(12);  // return 503 if js failed to respond within 12 seconds
+setMaxBodyBytes(5 * 1024 * 1024);  // set body-limit to 5mb handled natively by rust instead of node js
 </code><button class="copy-btn" data-target="init">Copy</button></pre>
     </section>
 
     <section class="card">
       <h2>Middleware</h2>
       <pre><code class="language-js" id="mid">
+// CORS config
 app.use((req,res,next)=>{
   res.setHeader("Access-Control-Allow-Origin","*");
   res.setHeader("Access-Control-Allow-Methods","GET,POST,PUT,DELETE,OPTIONS");
@@ -280,17 +335,21 @@ app.get("/goto",(req,res)=>res.redirect("https://google.com"));
       <h2>Listen & Shutdown</h2>
       <pre><code class="language-js" id="listen">
 app.listen("0.0.0.0",2000,()=>console.log("Listening on 2000"));
-process.on("SIGINT",async()=>{await app.close(3000);process.exit(0);});
+// GRACEFUL shutdown handled safely with TOKIO
+process.on("SIGINT",async()=>{await app.close(3000);process.exit(0);});  
 </code><button class="copy-btn" data-target="listen">Copy</button></pre>
     </section>
 
     <section class="card">
       <h2>Benchmark</h2>
       <pre><code class="language-bash" id="bench">
-wrk -t4 -c200 -d10s http://127.0.0.1:2000/hi
-# ~130k req/sec, <2ms avg latency (i5-12450H)
+wrk -t1 -c200 -d10s http://127.0.0.1:2000/hi
+# ~251.2k req/sec, <2ms avg latency (i5-12450H)
 </code><button class="copy-btn" data-target="bench">Copy</button></pre>
-      <iframe src="https://web-frameworks-benchmark.netlify.app/result?asc=0&l=javascript&order_by=level64"></iframe>
+      <div class="iframe-wrapper">
+        <iframe src="https://web-frameworks-benchmark.netlify.app/compare?f=brahma-firelight,fastify,express"></iframe>
+      </div>
+
     </section>
 
     <section class="card story">
@@ -303,8 +362,15 @@ wrk -t4 -c200 -d10s http://127.0.0.1:2000/hi
         you love this project, give it a try
         and don’t forget to star it ⭐.
       </p>
-
     </section>
+
+    <!-- 💫 Glowing GitHub Star Section -->
+    <section class="glow-star">
+      <a href="https://github.com/Shyam20001/rsjs" target="_blank" class="star-btn">
+        ⭐ Star on GitHub
+      </a>
+    </section>
+
 
     <footer>
       <p>© <span id="year"></span> Brahma-JS Project. Built with Rust⚙️ + JS⚡</p>
