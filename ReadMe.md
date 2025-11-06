@@ -221,8 +221,8 @@ app.listen("0.0.0.0", 2000, () => {
 Just like Express:
 
 ```js
-app.get("/hello", (req, res) => {
-  res.send("Hi there!");
+app.get("/healthz", (req, res) => {
+  res.send(200);
 });
 ```
 
