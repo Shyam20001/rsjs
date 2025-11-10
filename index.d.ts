@@ -8,6 +8,15 @@ export declare function registerJsCallback(callback: ((err: Error | null, arg0: 
 
 export declare function respond(reqId: string, payload: string): void
 
+/** Exposed: parse a Buffer asynchronously (returns Promise -> JS object) */
+export declare function serdeParseAsync(input: Buffer): Promise<unknown>
+
+/**
+ * Exposed: stringify asynchronously. Accepts a JS string (which we will parse then re-serialize).
+ * Returns a Promise resolving to a JS string.
+ */
+export declare function serdeStringifyAsync(input: string): Promise<string>
+
 export declare function setJsResponseTimeout(secs: number): void
 
 export declare function setMaxBodyBytes(bytes: number): void

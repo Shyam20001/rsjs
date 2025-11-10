@@ -888,7 +888,7 @@
 
 // simple glue with body normalized to Buffer (no busboy)
 // date: 20250927
-const { startServer, registerJsCallback, respond, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes } = require('./index'); // native addon
+const { startServer, registerJsCallback, respond, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes, serdeParseAsync, serdeStringifyAsync } = require('./index'); // native addon
 const { URLSearchParams } = require('url');
 
 // function bufferFromBody(raw) {
@@ -917,7 +917,7 @@ const { URLSearchParams } = require('url');
 
 function useBrahma(handler) {
   registerJsCallback((_, rawParts) => {
-   // console.log(rawParts)
+    // console.log(rawParts)
     // rawParts = [reqId, path, method, query, headersJson, body, peer_addr, cookie_header]
     const reqId = rawParts[0];
     const path = rawParts[1] ?? '/';
@@ -1114,4 +1114,4 @@ function useBrahma(handler) {
   });
 }
 
-module.exports = { startServer, useBrahma, setJsResponseTimeout, setMaxBodyBytes, getJsResponseTimeout, getMaxBodyBytes };
+module.exports = { startServer, useBrahma, setJsResponseTimeout, setMaxBodyBytes, getJsResponseTimeout, getMaxBodyBytes, serdeParseAsync, serdeStringifyAsync };

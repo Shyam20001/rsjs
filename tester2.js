@@ -76,7 +76,7 @@
 
 
 /// final stable 
-const { startServer, useBrahma, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes } = require('./brahma');
+const { startServer, useBrahma, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes, serdeParseAsync, serdeStringifyAsync } = require('./brahma');
 
 
 // set 2 minutes timeout (120 seconds)
@@ -106,7 +106,9 @@ useBrahma(async (req, res) => {
 
   if (req.path === "/json" && req.method === "POST") {
     try {
-      const parsed = JSON.parse(req.body);
+      //  const parsed = JSON.parse(req.body);
+      const parsed = await serdeParseAsync(req.body);
+    //  console.log(parsed)
       // await sleep(3000);
       res.json({ youSent: parsed, req });
     } catch {
