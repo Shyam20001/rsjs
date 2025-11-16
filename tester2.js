@@ -76,14 +76,16 @@
 
 
 /// final stable 
-const { startServer, useBrahma, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes, serdeParseAsync, serdeStringifyAsync } = require('./brahma');
-
-
+const path = require('path');
+const { startServer, useBrahma, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes, registerRustHotpath } = require('./brahma');
+const fs = require("fs")
 // set 2 minutes timeout (120 seconds)
 setJsResponseTimeout(500);
 
 // set max body to 50 MiB
 setMaxBodyBytes(100 * 1024 * 1024); // 52_428_800
+
+
 
 console.log('timeout secs:', getJsResponseTimeout()); // prints 120
 console.log('max body bytes:', getMaxBodyBytes());   // prints 52428800
@@ -108,7 +110,7 @@ useBrahma(async (req, res) => {
     try {
       //  const parsed = JSON.parse(req.body);
       const parsed = await serdeParseAsync(req.body);
-    //  console.log(parsed)
+      //  console.log(parsed)
       // await sleep(3000);
       res.json({ youSent: parsed, req });
     } catch {
@@ -146,10 +148,40 @@ useBrahma(async (req, res) => {
     return;
   }
 
+  if (req.path === "/img") {
+  // Read image synchronously
+  const imgPath = path.join(__dirname, "test.png");
+  const imgData = fs.readFileSync(imgPath);
+
+  // Send with image headers + cookies
+  res.send(
+    200,
+    {
+      "Content-Type": "image/png",
+      "Content-Length": imgData.length
+    },
+    [
+      "a=1; Path=/; HttpOnly",
+      "b=2; Path=/; Secure; Max-Age=3600"
+    ],
+    imgData
+  );
+
+  return;
+}
+
   // NOTE: static files: any request to /static/* will be served by the Rust fast-path directly
   // 
 
   return { status: 404, body: "Not Found" };
-});
+}); 
+let imgPath = path.join(process.cwd(), 'test.png')
+console.log(imgPath)
+let img = fs.readFileSync(imgPath)
+registerRustHotpath("GET",
+  "/hot",
+  200,
+  '{"Content-Type": "image/jpeg"}',
+  img)
 
 startServer("0.0.0.0", 2000)

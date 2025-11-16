@@ -886,49 +886,313 @@
 //////////////////
 
 
-// simple glue with body normalized to Buffer (no busboy)
-// date: 20250927
-const { startServer, registerJsCallback, respond, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes, serdeParseAsync, serdeStringifyAsync } = require('./index'); // native addon
+// // simple glue with body normalized to Buffer (no busboy)
+// // date: 20250927
+// const { startServer, registerJsCallback, respond, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes, registerRustHotpath } = require('./index'); // native addon
+// const { URLSearchParams } = require('url');
+
+// // function bufferFromBody(raw) {
+// //   if (!raw) return Buffer.alloc(0);
+// //   if (Buffer.isBuffer(raw)) return raw;
+// //   if (Array.isArray(raw)) return Buffer.from(raw);
+// //   if (typeof raw === 'string') return Buffer.from(raw, 'utf8');
+// //   try {
+// //     return Buffer.from(raw);
+// //   } catch {
+// //     return Buffer.alloc(0);
+// //   }
+// // }
+
+// // fast one 
+// // function bufferFromBody(raw) {
+// //   console.log(raw)
+// //   return raw || Buffer.alloc(0);
+// // }
+
+// // function bufferFromBody(raw) {
+// //   return Buffer.from(raw || []);
+// // }
+
+// function useBrahma(handler) {
+//   registerJsCallback((_, rawParts) => {
+//     // console.log(rawParts)
+//     // rawParts = [reqId, path, method, query, headersJson, body, peer_addr, cookie_header]
+//     const reqId = rawParts[0];
+//     const path = rawParts[1] ?? '/';
+//     const method = (rawParts[2] ?? 'GET').toUpperCase();
+//     const rawQuery = rawParts[3] ?? '';
+//     const headersStr = rawParts[4] ?? '{}'; // full headers JSON from Rust
+//     const rawBody = rawParts[5] ?? '';
+//     const peerAddr = rawParts[6] ?? '';
+//     const rawCookieHeader = rawParts[7] ?? '';
+
+//     // Parse peerAddr into ip and port (split on last ':', supports "[::1]:1234")
+//     let client_ip = '';
+//     let client_port = '';
+//     if (peerAddr) {
+//       const lastColon = peerAddr.lastIndexOf(':');
+//       if (lastColon > -1) {
+//         client_ip = peerAddr.slice(0, lastColon);
+//         client_port = peerAddr.slice(lastColon + 1);
+//         if (client_ip.startsWith('[') && client_ip.endsWith(']')) {
+//           client_ip = client_ip.slice(1, -1);
+//         }
+//       } else {
+//         client_ip = peerAddr;
+//       }
+//     }
+
+//     // Parse query string
+//     const query = {};
+//     if (rawQuery) {
+//       for (const [k, v] of new URLSearchParams(rawQuery)) {
+//         query[k] = v;
+//       }
+//     }
+
+//     // Parse headers JSON (robust to object or array-of-pairs). Lowercase header names.
+//     let headers = {};
+//     try {
+//       const parsed = JSON.parse(headersStr || '{}');
+//       if (Array.isArray(parsed)) {
+//         for (const item of parsed) {
+//           if (!Array.isArray(item) || item.length < 2) continue;
+//           const name = String(item[0]).toLowerCase();
+//           const val = String(item[1]);
+//           if (headers[name] === undefined) headers[name] = val;
+//           else if (Array.isArray(headers[name])) headers[name].push(val);
+//           else headers[name] = [headers[name], val];
+//         }
+//       } else if (parsed && typeof parsed === 'object') {
+//         for (const k of Object.keys(parsed)) {
+//           headers[k.toLowerCase()] = parsed[k];
+//         }
+//       }
+//     } catch (err) {
+//       console.warn('⚠️ Failed to parse headers JSON:', headersStr);
+//       headers = {};
+//     }
+
+//     // Simple cookie parser — prefer rawCookieHeader from Rust; fallback to headers['cookie']
+//     const cookies = {};
+//     const cookieHeader = rawCookieHeader || headers['cookie'] || '';
+//     if (cookieHeader) {
+//       cookieHeader.split(/; */).forEach((pair) => {
+//         const idx = pair.indexOf('=');
+//         if (idx > 0) {
+//           const k = pair.slice(0, idx).trim();
+//           const v = pair.slice(idx + 1).trim();
+//           if (k) cookies[k] = v;
+//         }
+//       });
+//     }
+
+//     // Normalize body into Buffer (no parsing here; leave it to handler)
+//     // const body = bufferFromBody(rawBody);
+//     const body = rawBody || Buffer.alloc(0);
+
+
+//     // Build req object
+//     const req = {
+//       reqId,
+//       path,
+//       method,
+//       query,
+//       headers, // parsed headers available here
+//       body, // Buffer
+//       cookies,
+//       ip: client_ip,
+//       port: client_port,
+//       raw: { peerAddr, rawCookieHeader, headersStr },
+//     };
+
+//     // --- Response glue ---
+//     let responded = false;
+//     const sendOnce = (payloadObj) => {
+//       if (responded) {
+//         console.warn(`Attempt to respond twice for reqId=${reqId} — ignored`);
+//         return;
+//       }
+//       responded = true;
+//       try {
+//         respond(reqId, JSON.stringify(payloadObj));
+//       } catch (err) {
+//         console.error('Failed to call respond native binding:', err);
+//       }
+//     };
+
+//     // Helper to normalize cookies input into array of strings
+//     const normalizeCookies = (cookiesInput) => {
+//       if (!cookiesInput) return [];
+//       if (Array.isArray(cookiesInput)) return cookiesInput.map(String);
+//       return [String(cookiesInput)];
+//     };
+
+//     const res = {
+//       send: (status = 200, headersOut = { 'content-type': 'text/plain' }, cookiesInput = [], bodyOut = '') => {
+//         const cookieArr = normalizeCookies(cookiesInput);
+
+//         // Copy headers
+//         const headersCopy = Object.assign({}, headersOut);
+
+//         // IMPORTANT: If cookies array is provided, remove any Set-Cookie from headers
+//         // to avoid invalid header values (we want Rust to create one header per cookie).
+//         if (cookieArr.length > 0) {
+//           for (const hk of Object.keys(headersCopy)) {
+//             if (hk.toLowerCase() === 'set-cookie') {
+//               delete headersCopy[hk];
+//               console.warn('⚠️ Removing headers[Set-Cookie] because cookies array is provided; Rust will set Set-Cookie headers from payload.cookies.');
+//               break;
+//             }
+//           }
+//         }
+
+//         const payload = {
+//           status,
+//           headers: headersCopy,
+//           cookies: cookieArr,
+//           body: typeof bodyOut === 'string' ? bodyOut : (bodyOut && bodyOut.toString ? bodyOut.toString() : String(bodyOut ?? '')),
+//         };
+//         sendOnce(payload);
+//       },
+
+//       text: (text, status = 200, cookies) =>
+//         res.send(status, { 'Content-Type': 'text/plain' }, cookies ?? [], String(text)),
+
+//       html: (html, status = 200, cookies) =>
+//         res.send(status, { 'Content-Type': 'text/html' }, cookies ?? [], String(html)),
+
+//       json: (obj, status = 200, cookies) =>
+//         res.send(status, { 'Content-Type': 'application/json' }, cookies ?? [], JSON.stringify(obj)),
+
+//       redirect: (location, status = 302) =>
+//         res.send(status, { Location: location }, [], `Redirecting to ${location}`),
+//     };
+
+//     try {
+//       const out = handler(req, res);
+//       if (out && typeof out.then === 'function') {
+//         out
+//           .then((value) => {
+//             if (value && !responded) {
+//               sendOnce({
+//                 status: value.status ?? 200,
+//                 headers: value.headers ?? { 'Content-Type': 'text/plain' },
+//                 cookies: normalizeCookies(value.cookies ?? []),
+//                 body: value.body ?? '',
+//               });
+//             }
+//           })
+//           .catch((err) => {
+//             if (!responded) {
+//               sendOnce({
+//                 status: 500,
+//                 headers: { 'Content-Type': 'text/plain' },
+//                 body: 'Error: ' + (err && err.message ? err.message : String(err)),
+//               });
+//             }
+//           });
+//       } else if (out && !responded) {
+//         sendOnce({
+//           status: out.status ?? 200,
+//           headers: out.headers ?? { 'Content-Type': 'text/plain' },
+//           cookies: normalizeCookies(out.cookies ?? []),
+//           body: out.body ?? '',
+//         });
+//       }
+//     } catch (err) {
+//       if (!responded) {
+//         sendOnce({
+//           status: 500,
+//           headers: { 'Content-Type': 'text/plain' },
+//           body: 'Error: ' + (err && err.message ? err.message : String(err)),
+//         });
+//       }
+//     }
+//   });
+// }
+
+// module.exports = { respond, startServer, useBrahma, setJsResponseTimeout, setMaxBodyBytes, getJsResponseTimeout, getMaxBodyBytes, registerRustHotpath };
+
+
+///11162025
+// brahma-adapter.js
+// JS glue for Brahma-Firelight binary responder
+// date: 2025-09-27 (adapted)
+// Expects native binding exports: startServer, registerJsCallback, respond (Buffer), set/get helpers, registerRustHotpath
+
+const {
+  startServer,
+  registerJsCallback,
+  respond,
+  getJsResponseTimeout,
+  getMaxBodyBytes,
+  setJsResponseTimeout,
+  setMaxBodyBytes,
+  registerRustHotpath,
+} = require('./index'); // native addon
+
 const { URLSearchParams } = require('url');
 
-// function bufferFromBody(raw) {
-//   if (!raw) return Buffer.alloc(0);
-//   if (Buffer.isBuffer(raw)) return raw;
-//   if (Array.isArray(raw)) return Buffer.from(raw);
-//   if (typeof raw === 'string') return Buffer.from(raw, 'utf8');
-//   try {
-//     return Buffer.from(raw);
-//   } catch {
-//     return Buffer.alloc(0);
-//   }
-// }
+// ---------------------- Binary response builder ----------------------
+// Format:
+// [0..2)   u16  status (BE)
+// [2..6)   u32  headers_len (BE)
+// [6..10)  u32  cookies_len (BE)
+// [10..10+headers_len)  headers_json (UTF-8)  -- values can be string or array
+// [10+headers_len..10+headers_len+cookies_len) cookies_json (UTF-8) -- JSON array of strings
+// [..] remaining -> body bytes (raw)
+function buildResponseBuffer(status, headersObj, cookiesArray, bodyBuffer) {
+  const headersJson =
+    headersObj && Object.keys(headersObj).length ? JSON.stringify(headersObj) : '';
+  const headersBuf = Buffer.from(headersJson, 'utf8');
+  const headersLen = headersBuf.length >>> 0; // u32
 
-// fast one 
-// function bufferFromBody(raw) {
-//   console.log(raw)
-//   return raw || Buffer.alloc(0);
-// }
+  const cookiesJson =
+    Array.isArray(cookiesArray) && cookiesArray.length ? JSON.stringify(cookiesArray) : '';
+  const cookiesBuf = Buffer.from(cookiesJson, 'utf8');
+  const cookiesLen = cookiesBuf.length >>> 0; // u32
 
-// function bufferFromBody(raw) {
-//   return Buffer.from(raw || []);
-// }
+  const bodyLen = bodyBuffer ? bodyBuffer.length : 0;
+  const totalLen = 2 + 4 + 4 + headersLen + cookiesLen + bodyLen;
 
+  const out = Buffer.allocUnsafe(totalLen);
 
+  // status (u16 BE)
+  out.writeUInt16BE(status & 0xffff, 0);
 
+  // headers_len (u32 BE) at offset 2
+  out.writeUInt32BE(headersLen >>> 0, 2);
+
+  // cookies_len (u32 BE) at offset 6
+  out.writeUInt32BE(cookiesLen >>> 0, 6);
+
+  // copy headers
+  if (headersLen > 0) headersBuf.copy(out, 10);
+
+  // copy cookies
+  if (cookiesLen > 0) cookiesBuf.copy(out, 10 + headersLen);
+
+  // copy body
+  if (bodyLen > 0) bodyBuffer.copy(out, 10 + headersLen + cookiesLen);
+
+  return out;
+}
+
+// ---------------------- Adapter: useBrahma ----------------------
 function useBrahma(handler) {
   registerJsCallback((_, rawParts) => {
-    // console.log(rawParts)
-    // rawParts = [reqId, path, method, query, headersJson, body, peer_addr, cookie_header]
+    // rawParts format: [reqId, path, method, query, headersJson, body(Buffer), peer_addr, cookie_header]
     const reqId = rawParts[0];
     const path = rawParts[1] ?? '/';
     const method = (rawParts[2] ?? 'GET').toUpperCase();
     const rawQuery = rawParts[3] ?? '';
-    const headersStr = rawParts[4] ?? '{}'; // full headers JSON from Rust
-    const rawBody = rawParts[5] ?? '';
+    const headersStr = rawParts[4] ?? '{}';
+    const rawBody = rawParts[5] ?? ''; // Buffer or '' fallback
     const peerAddr = rawParts[6] ?? '';
     const rawCookieHeader = rawParts[7] ?? '';
 
-    // Parse peerAddr into ip and port (split on last ':', supports "[::1]:1234")
+    // Parse peerAddr into ip and port
     let client_ip = '';
     let client_port = '';
     if (peerAddr) {
@@ -944,7 +1208,7 @@ function useBrahma(handler) {
       }
     }
 
-    // Parse query string
+    // Parse query
     const query = {};
     if (rawQuery) {
       for (const [k, v] of new URLSearchParams(rawQuery)) {
@@ -952,15 +1216,17 @@ function useBrahma(handler) {
       }
     }
 
-    // Parse headers JSON (robust to object or array-of-pairs). Lowercase header names.
+    // Parse headers JSON into lowercased keys
     let headers = {};
     try {
       const parsed = JSON.parse(headersStr || '{}');
       if (Array.isArray(parsed)) {
+        // Array-of-pairs format: [[k,v], [k2,v2], ...]
         for (const item of parsed) {
           if (!Array.isArray(item) || item.length < 2) continue;
           const name = String(item[0]).toLowerCase();
-          const val = String(item[1]);
+          const val = item[1];
+          // Preserve arrays if duplicate keys
           if (headers[name] === undefined) headers[name] = val;
           else if (Array.isArray(headers[name])) headers[name].push(val);
           else headers[name] = [headers[name], val];
@@ -975,7 +1241,7 @@ function useBrahma(handler) {
       headers = {};
     }
 
-    // Simple cookie parser — prefer rawCookieHeader from Rust; fallback to headers['cookie']
+    // Simple cookie parser — prefer rawCookieHeader from Rust
     const cookies = {};
     const cookieHeader = rawCookieHeader || headers['cookie'] || '';
     if (cookieHeader) {
@@ -989,18 +1255,16 @@ function useBrahma(handler) {
       });
     }
 
-    // Normalize body into Buffer (no parsing here; leave it to handler)
-    // const body = bufferFromBody(rawBody);
+    // Normalize body to Buffer
     const body = rawBody || Buffer.alloc(0);
 
-
-    // Build req object
+    // Build req object for handler
     const req = {
       reqId,
       path,
       method,
       query,
-      headers, // parsed headers available here
+      headers, // values may be string, array, or object depending on upstream
       body, // Buffer
       cookies,
       ip: client_ip,
@@ -1008,42 +1272,87 @@ function useBrahma(handler) {
       raw: { peerAddr, rawCookieHeader, headersStr },
     };
 
-    // --- Response glue ---
+    // Response glue
     let responded = false;
+
+    // Helper normalizers
+    const normalizeCookies = (cookiesInput) => {
+      if (!cookiesInput) return [];
+      if (Array.isArray(cookiesInput)) return cookiesInput.map(String);
+      if (typeof cookiesInput === 'object') {
+        return Object.keys(cookiesInput).map((k) => `${k}=${cookiesInput[k]}`);
+      }
+      return [String(cookiesInput)];
+    };
+
+    // Replace sendOnce to construct binary payload
     const sendOnce = (payloadObj) => {
       if (responded) {
         console.warn(`Attempt to respond twice for reqId=${reqId} — ignored`);
         return;
       }
       responded = true;
+
       try {
-        respond(reqId, JSON.stringify(payloadObj));
+        // Normalize status
+        const status = Number(payloadObj.status || 200) || 200;
+
+        // Normalize headers object (must be plain object where values can be string or array)
+        const headersOut =
+          payloadObj.headers && typeof payloadObj.headers === 'object'
+            ? payloadObj.headers
+            : { 'content-type': 'text/plain' };
+
+        // Normalize cookies array
+        const cookieArr = normalizeCookies(payloadObj.cookies);
+
+        // Normalize body into Buffer
+        let bodyOut = payloadObj.body;
+        let bodyBuf;
+        if (Buffer.isBuffer(bodyOut)) {
+          bodyBuf = bodyOut;
+        } else if (bodyOut == null) {
+          bodyBuf = Buffer.alloc(0);
+        } else if (typeof bodyOut === 'string') {
+          bodyBuf = Buffer.from(bodyOut, 'utf8');
+        } else if (typeof bodyOut === 'object') {
+          try {
+            bodyBuf = Buffer.from(JSON.stringify(bodyOut), 'utf8');
+          } catch {
+            bodyBuf = Buffer.from(String(bodyOut), 'utf8');
+          }
+        } else {
+          bodyBuf = Buffer.from(String(bodyOut), 'utf8');
+        }
+
+        // Build binary buffer and call native respond(reqId, Buffer)
+        const payloadBuf = buildResponseBuffer(status, headersOut, cookieArr, bodyBuf);
+
+        // Native binding expects Buffer
+        respond(reqId, payloadBuf);
       } catch (err) {
-        console.error('Failed to call respond native binding:', err);
+        console.error('Failed to build binary payload for respond:', err);
+        try {
+          // Fallback: best-effort minimal text buffer
+          respond(reqId, Buffer.from('Error building response', 'utf8'));
+        } catch (e2) {
+          console.error('Fallback respond also failed:', e2);
+        }
       }
     };
 
-    // Helper to normalize cookies input into array of strings
-    const normalizeCookies = (cookiesInput) => {
-      if (!cookiesInput) return [];
-      if (Array.isArray(cookiesInput)) return cookiesInput.map(String);
-      return [String(cookiesInput)];
-    };
-
+    // Convenience response helpers (use res.send / res.text / res.html / res.json)
     const res = {
-      send: (status = 200, headersOut = { 'content-type': 'text/plain' }, cookiesInput = [], bodyOut = '') => {
+      send: (status = 200, headersOut = { 'Content-Type': 'text/plain' }, cookiesInput = [], bodyOut = '') => {
         const cookieArr = normalizeCookies(cookiesInput);
 
-        // Copy headers
+        // Remove Set-Cookie from headersOut if cookieArr provided (Rust will set cookies)
         const headersCopy = Object.assign({}, headersOut);
-
-        // IMPORTANT: If cookies array is provided, remove any Set-Cookie from headers
-        // to avoid invalid header values (we want Rust to create one header per cookie).
         if (cookieArr.length > 0) {
           for (const hk of Object.keys(headersCopy)) {
             if (hk.toLowerCase() === 'set-cookie') {
               delete headersCopy[hk];
-              console.warn('⚠️ Removing headers[Set-Cookie] because cookies array is provided; Rust will set Set-Cookie headers from payload.cookies.');
+              console.warn('⚠️ Removed Set-Cookie header; providing cookies array instead.');
               break;
             }
           }
@@ -1053,7 +1362,7 @@ function useBrahma(handler) {
           status,
           headers: headersCopy,
           cookies: cookieArr,
-          body: typeof bodyOut === 'string' ? bodyOut : (bodyOut && bodyOut.toString ? bodyOut.toString() : String(bodyOut ?? '')),
+          body: typeof bodyOut === 'string' ? bodyOut : bodyOut,
         };
         sendOnce(payload);
       },
@@ -1067,10 +1376,10 @@ function useBrahma(handler) {
       json: (obj, status = 200, cookies) =>
         res.send(status, { 'Content-Type': 'application/json' }, cookies ?? [], JSON.stringify(obj)),
 
-      redirect: (location, status = 302) =>
-        res.send(status, { Location: location }, [], `Redirecting to ${location}`),
+      redirect: (location, status = 302) => res.send(status, { Location: location }, [], `Redirecting to ${location}`),
     };
 
+    // Execute handler (sync or promise)
     try {
       const out = handler(req, res);
       if (out && typeof out.then === 'function') {
@@ -1080,7 +1389,7 @@ function useBrahma(handler) {
               sendOnce({
                 status: value.status ?? 200,
                 headers: value.headers ?? { 'Content-Type': 'text/plain' },
-                cookies: normalizeCookies(value.cookies ?? []),
+                cookies: value.cookies ?? [],
                 body: value.body ?? '',
               });
             }
@@ -1098,7 +1407,7 @@ function useBrahma(handler) {
         sendOnce({
           status: out.status ?? 200,
           headers: out.headers ?? { 'Content-Type': 'text/plain' },
-          cookies: normalizeCookies(out.cookies ?? []),
+          cookies: out.cookies ?? [],
           body: out.body ?? '',
         });
       }
@@ -1114,4 +1423,15 @@ function useBrahma(handler) {
   });
 }
 
-module.exports = { startServer, useBrahma, setJsResponseTimeout, setMaxBodyBytes, getJsResponseTimeout, getMaxBodyBytes, serdeParseAsync, serdeStringifyAsync };
+// Export utilities
+module.exports = {
+  startServer,
+  registerJsCallback,
+  respond, // direct binding (advanced users)
+  useBrahma,
+  setJsResponseTimeout,
+  setMaxBodyBytes,
+  getJsResponseTimeout,
+  getMaxBodyBytes,
+  registerRustHotpath,
+};
