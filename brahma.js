@@ -1116,83 +1116,27 @@
 
 
 ///11162025
-// brahma-adapter.js
-// JS glue for Brahma-Firelight binary responder
-// date: 2025-09-27 (adapted)
-// Expects native binding exports: startServer, registerJsCallback, respond (Buffer), set/get helpers, registerRustHotpath
-
-const {
-  startServer,
-  registerJsCallback,
-  respond,
-  getJsResponseTimeout,
-  getMaxBodyBytes,
-  setJsResponseTimeout,
-  setMaxBodyBytes,
-  registerRustHotpath,
-} = require('./index'); // native addon
-
+// brahma-glue-updated.js
+// simple glue with body normalized to Buffer (no busboy)
+// date: 20250927 (updated)
+// native binding exports: startServer, registerJsCallback, respond, set/get, registerRustHotpath
+const { startServer, registerJsCallback, respond, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes, registerRustHotpath } = require('./index'); // native addon
 const { URLSearchParams } = require('url');
 
-// ---------------------- Binary response builder ----------------------
-// Format:
-// [0..2)   u16  status (BE)
-// [2..6)   u32  headers_len (BE)
-// [6..10)  u32  cookies_len (BE)
-// [10..10+headers_len)  headers_json (UTF-8)  -- values can be string or array
-// [10+headers_len..10+headers_len+cookies_len) cookies_json (UTF-8) -- JSON array of strings
-// [..] remaining -> body bytes (raw)
-function buildResponseBuffer(status, headersObj, cookiesArray, bodyBuffer) {
-  const headersJson =
-    headersObj && Object.keys(headersObj).length ? JSON.stringify(headersObj) : '';
-  const headersBuf = Buffer.from(headersJson, 'utf8');
-  const headersLen = headersBuf.length >>> 0; // u32
-
-  const cookiesJson =
-    Array.isArray(cookiesArray) && cookiesArray.length ? JSON.stringify(cookiesArray) : '';
-  const cookiesBuf = Buffer.from(cookiesJson, 'utf8');
-  const cookiesLen = cookiesBuf.length >>> 0; // u32
-
-  const bodyLen = bodyBuffer ? bodyBuffer.length : 0;
-  const totalLen = 2 + 4 + 4 + headersLen + cookiesLen + bodyLen;
-
-  const out = Buffer.allocUnsafe(totalLen);
-
-  // status (u16 BE)
-  out.writeUInt16BE(status & 0xffff, 0);
-
-  // headers_len (u32 BE) at offset 2
-  out.writeUInt32BE(headersLen >>> 0, 2);
-
-  // cookies_len (u32 BE) at offset 6
-  out.writeUInt32BE(cookiesLen >>> 0, 6);
-
-  // copy headers
-  if (headersLen > 0) headersBuf.copy(out, 10);
-
-  // copy cookies
-  if (cookiesLen > 0) cookiesBuf.copy(out, 10 + headersLen);
-
-  // copy body
-  if (bodyLen > 0) bodyBuffer.copy(out, 10 + headersLen + cookiesLen);
-
-  return out;
-}
-
-// ---------------------- Adapter: useBrahma ----------------------
+// useBrahma: registers JS handler and adapts to native respond(reqId, status, headersJsonOpt, cookiesJsonOpt, bodyBuf)
 function useBrahma(handler) {
   registerJsCallback((_, rawParts) => {
-    // rawParts format: [reqId, path, method, query, headersJson, body(Buffer), peer_addr, cookie_header]
+    // rawParts = [reqId, path, method, query, headersJson, body(Buffer), peer_addr, cookie_header]
     const reqId = rawParts[0];
     const path = rawParts[1] ?? '/';
     const method = (rawParts[2] ?? 'GET').toUpperCase();
     const rawQuery = rawParts[3] ?? '';
-    const headersStr = rawParts[4] ?? '{}';
-    const rawBody = rawParts[5] ?? ''; // Buffer or '' fallback
+    const headersStr = rawParts[4] ?? '{}'; // full headers JSON from Rust (string)
+    const rawBody = rawParts[5] ?? Buffer.alloc(0); // Buffer
     const peerAddr = rawParts[6] ?? '';
     const rawCookieHeader = rawParts[7] ?? '';
 
-    // Parse peerAddr into ip and port
+    // Parse peerAddr into ip and port (split on last ':', supports "[::1]:1234")
     let client_ip = '';
     let client_port = '';
     if (peerAddr) {
@@ -1208,7 +1152,7 @@ function useBrahma(handler) {
       }
     }
 
-    // Parse query
+    // Parse query string
     const query = {};
     if (rawQuery) {
       for (const [k, v] of new URLSearchParams(rawQuery)) {
@@ -1216,17 +1160,16 @@ function useBrahma(handler) {
       }
     }
 
-    // Parse headers JSON into lowercased keys
+    // Parse headers JSON (robust to object or array-of-pairs). Lowercase header names.
     let headers = {};
     try {
       const parsed = JSON.parse(headersStr || '{}');
       if (Array.isArray(parsed)) {
-        // Array-of-pairs format: [[k,v], [k2,v2], ...]
+        // [[k,v], [k2,v2], ...]
         for (const item of parsed) {
           if (!Array.isArray(item) || item.length < 2) continue;
           const name = String(item[0]).toLowerCase();
           const val = item[1];
-          // Preserve arrays if duplicate keys
           if (headers[name] === undefined) headers[name] = val;
           else if (Array.isArray(headers[name])) headers[name].push(val);
           else headers[name] = [headers[name], val];
@@ -1241,7 +1184,7 @@ function useBrahma(handler) {
       headers = {};
     }
 
-    // Simple cookie parser — prefer rawCookieHeader from Rust
+    // Simple cookie parser — prefer rawCookieHeader from Rust; fallback to headers['cookie']
     const cookies = {};
     const cookieHeader = rawCookieHeader || headers['cookie'] || '';
     if (cookieHeader) {
@@ -1255,16 +1198,16 @@ function useBrahma(handler) {
       });
     }
 
-    // Normalize body to Buffer
-    const body = rawBody || Buffer.alloc(0);
+    // Normalize body into Buffer (no parsing here; leave it to handler)
+    const body = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(rawBody || '');
 
-    // Build req object for handler
+    // Build req object
     const req = {
       reqId,
       path,
       method,
       query,
-      headers, // values may be string, array, or object depending on upstream
+      headers, // parsed headers available here (values may be string or array)
       body, // Buffer
       cookies,
       ip: client_ip,
@@ -1272,20 +1215,34 @@ function useBrahma(handler) {
       raw: { peerAddr, rawCookieHeader, headersStr },
     };
 
-    // Response glue
+    // --- Response glue ---
     let responded = false;
 
-    // Helper normalizers
+    // Helper to normalize cookies input into array of strings
     const normalizeCookies = (cookiesInput) => {
       if (!cookiesInput) return [];
       if (Array.isArray(cookiesInput)) return cookiesInput.map(String);
       if (typeof cookiesInput === 'object') {
+        // object map -> ["k=v", ...]
         return Object.keys(cookiesInput).map((k) => `${k}=${cookiesInput[k]}`);
       }
       return [String(cookiesInput)];
     };
 
-    // Replace sendOnce to construct binary payload
+    // Normalize headers for outgoing response: allow values string OR array
+    const normalizeHeadersOut = (headersInput) => {
+      if (!headersInput || typeof headersInput !== 'object') {
+        return { 'Content-Type': 'text/plain' };
+      }
+      // Copy to plain object
+      const out = {};
+      for (const k of Object.keys(headersInput)) {
+        out[k] = headersInput[k];
+      }
+      return out;
+    };
+
+    // NEW sendOnce: call native.respond(reqId, status, headersJsonOrNull, cookiesJsonOrNull, bodyBuffer)
     const sendOnce = (payloadObj) => {
       if (responded) {
         console.warn(`Attempt to respond twice for reqId=${reqId} — ignored`);
@@ -1294,19 +1251,18 @@ function useBrahma(handler) {
       responded = true;
 
       try {
-        // Normalize status
-        const status = Number(payloadObj.status || 200) || 200;
+        // Normalize status to number (u32)
+        const statusNum = Number(payloadObj.status ?? 200) || 200;
 
-        // Normalize headers object (must be plain object where values can be string or array)
-        const headersOut =
-          payloadObj.headers && typeof payloadObj.headers === 'object'
-            ? payloadObj.headers
-            : { 'content-type': 'text/plain' };
+        // Prepare headers object (values can be string or array)
+        const headersOut = normalizeHeadersOut(payloadObj.headers);
+        const headersJson = (headersOut && Object.keys(headersOut).length) ? JSON.stringify(headersOut) : null;
 
-        // Normalize cookies array
+        // Prepare cookies array JSON (array of strings) or null
         const cookieArr = normalizeCookies(payloadObj.cookies);
+        const cookiesJson = (cookieArr && cookieArr.length) ? JSON.stringify(cookieArr) : null;
 
-        // Normalize body into Buffer
+        // Prepare body Buffer
         let bodyOut = payloadObj.body;
         let bodyBuf;
         if (Buffer.isBuffer(bodyOut)) {
@@ -1316,6 +1272,7 @@ function useBrahma(handler) {
         } else if (typeof bodyOut === 'string') {
           bodyBuf = Buffer.from(bodyOut, 'utf8');
         } else if (typeof bodyOut === 'object') {
+          // for plain objects, default to JSON string. If caller wants different encoding they should pass Buffer.
           try {
             bodyBuf = Buffer.from(JSON.stringify(bodyOut), 'utf8');
           } catch {
@@ -1325,34 +1282,48 @@ function useBrahma(handler) {
           bodyBuf = Buffer.from(String(bodyOut), 'utf8');
         }
 
-        // Build binary buffer and call native respond(reqId, Buffer)
-        const payloadBuf = buildResponseBuffer(status, headersOut, cookieArr, bodyBuf);
+        // IMPORTANT: if cookiesJson present, remove any Set-Cookie header from headersJson to avoid duplication.
+        if (cookiesJson) {
+          // convert headersOut to mutable object and drop set-cookie keys (case-insensitive)
+          const hk = Object.keys(headersOut).find(hn => String(hn).toLowerCase() === 'set-cookie');
+          if (hk) {
+            delete headersOut[hk];
+            // recompute headersJson
+            const nj = (Object.keys(headersOut).length) ? JSON.stringify(headersOut) : null;
+            // override headersJson var
+            // (we already have headersJson computed above; recompute)
+            // eslint-disable-next-line no-shadow
+            const headersJsonFinal = nj;
+            // Call native
+            respond(reqId, statusNum, headersJsonFinal, cookiesJson, bodyBuf);
+            return;
+          }
+        }
 
-        // Native binding expects Buffer
-        respond(reqId, payloadBuf);
+        // Call native respond with separate args
+        respond(reqId, statusNum, headersJson, cookiesJson, bodyBuf);
       } catch (err) {
-        console.error('Failed to build binary payload for respond:', err);
+        console.error('Failed to call respond native binding:', err);
+        // Best-effort fallback: try to send a minimal error body (native expects Buffer last param)
         try {
-          // Fallback: best-effort minimal text buffer
-          respond(reqId, Buffer.from('Error building response', 'utf8'));
+          respond(reqId, 500, JSON.stringify({ 'Content-Type': 'text/plain' }), null, Buffer.from('Internal error', 'utf8'));
         } catch (e2) {
           console.error('Fallback respond also failed:', e2);
         }
       }
     };
 
-    // Convenience response helpers (use res.send / res.text / res.html / res.json)
     const res = {
-      send: (status = 200, headersOut = { 'Content-Type': 'text/plain' }, cookiesInput = [], bodyOut = '') => {
+      send: (status = 200, headersOut = { 'content-type': 'text/plain' }, cookiesInput = [], bodyOut = '') => {
         const cookieArr = normalizeCookies(cookiesInput);
 
-        // Remove Set-Cookie from headersOut if cookieArr provided (Rust will set cookies)
+        // Copy headers and remove Set-Cookie if cookieArr provided
         const headersCopy = Object.assign({}, headersOut);
         if (cookieArr.length > 0) {
           for (const hk of Object.keys(headersCopy)) {
             if (hk.toLowerCase() === 'set-cookie') {
               delete headersCopy[hk];
-              console.warn('⚠️ Removed Set-Cookie header; providing cookies array instead.');
+              console.warn('⚠️ Removing headers[Set-Cookie] because cookies array is provided; Rust will set Set-Cookie headers from payload.cookies.');
               break;
             }
           }
@@ -1362,7 +1333,7 @@ function useBrahma(handler) {
           status,
           headers: headersCopy,
           cookies: cookieArr,
-          body: typeof bodyOut === 'string' ? bodyOut : bodyOut,
+          body: bodyOut,
         };
         sendOnce(payload);
       },
@@ -1376,10 +1347,10 @@ function useBrahma(handler) {
       json: (obj, status = 200, cookies) =>
         res.send(status, { 'Content-Type': 'application/json' }, cookies ?? [], JSON.stringify(obj)),
 
-      redirect: (location, status = 302) => res.send(status, { Location: location }, [], `Redirecting to ${location}`),
+      redirect: (location, status = 302) =>
+        res.send(status, { Location: location }, [], `Redirecting to ${location}`),
     };
 
-    // Execute handler (sync or promise)
     try {
       const out = handler(req, res);
       if (out && typeof out.then === 'function') {
@@ -1389,7 +1360,7 @@ function useBrahma(handler) {
               sendOnce({
                 status: value.status ?? 200,
                 headers: value.headers ?? { 'Content-Type': 'text/plain' },
-                cookies: value.cookies ?? [],
+                cookies: normalizeCookies(value.cookies ?? []),
                 body: value.body ?? '',
               });
             }
@@ -1407,7 +1378,7 @@ function useBrahma(handler) {
         sendOnce({
           status: out.status ?? 200,
           headers: out.headers ?? { 'Content-Type': 'text/plain' },
-          cookies: out.cookies ?? [],
+          cookies: normalizeCookies(out.cookies ?? []),
           body: out.body ?? '',
         });
       }
@@ -1423,15 +1394,5 @@ function useBrahma(handler) {
   });
 }
 
-// Export utilities
-module.exports = {
-  startServer,
-  registerJsCallback,
-  respond, // direct binding (advanced users)
-  useBrahma,
-  setJsResponseTimeout,
-  setMaxBodyBytes,
-  getJsResponseTimeout,
-  getMaxBodyBytes,
-  registerRustHotpath,
-};
+// Export: still expose native respond for advanced users, and useBrahma wrapper
+module.exports = { respond, startServer, useBrahma, setJsResponseTimeout, setMaxBodyBytes, getJsResponseTimeout, getMaxBodyBytes, registerRustHotpath };

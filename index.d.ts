@@ -14,7 +14,7 @@ export declare function registerRustHotpath(method: string, path: string, status
 
 export declare function removeRustHotpath(method: string, path: string): boolean
 
-export declare function respond(reqId: string, payload: Buffer): void
+export declare function respond(reqId: string, status: number, headersJson: string | undefined | null, cookiesJson: string | undefined | null, body: Buffer): void
 
 export declare function setJsResponseTimeout(secs: number): void
 

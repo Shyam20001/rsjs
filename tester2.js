@@ -156,7 +156,8 @@ useBrahma(async (req, res) => {
   // Send with image headers + cookies
   res.send(
     200,
-    {
+    { 
+      "poda": ["mayiru", "potta"],
       "Content-Type": "image/png",
       "Content-Length": imgData.length
     },
