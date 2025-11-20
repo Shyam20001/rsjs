@@ -1,9 +1,8 @@
 // Created by Shyam M (https://github.com/Shyam20001)
 // License: MIT
 // BrahmaJS — Ultra-fast Node.js framework powered by Rust (via NAPI-RS)
-// Author: condensed for performance & clarity
 
-const { startServer, registerJsCallback, respond, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes } = require('./brahma'); // native addon
+const { startServer, registerJsCallback, respond, getJsResponseTimeout, getMaxBodyBytes, setJsResponseTimeout, setMaxBodyBytes, registerRustHotpath, listRustHotpaths, removeRustHotpath, clearRustHotpaths } = require('./brahma'); // native addon
 
 function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'); }
 function compilePath(path) {
@@ -87,14 +86,52 @@ function createApp() {
       _sent: false,
       _sendObj(obj) {
         if (sent) return; sent = true;
-        const cookies = Array.isArray(obj.cookies) ? obj.cookies : (obj.cookies ? [obj.cookies] : []);
-        const payload = {
-          status: obj.status ?? 200,
-          headers: Object.assign({}, headers, obj.headers || {}),
-          cookies,
-          body: obj.body ?? ''
-        };
-        try { respond(String(reqId), JSON.stringify(payload)); } catch (e) { console.error('respond failed', e); }
+
+        // Normalize cookies into array of strings
+        let cookies = [];
+        if (obj.cookies) {
+          if (Array.isArray(obj.cookies)) cookies = obj.cookies.map(String);
+          else if (typeof obj.cookies === 'object') {
+            // object map -> ["k=v", ...]
+            cookies = Object.keys(obj.cookies).map(k => `${k}=${obj.cookies[k]}`);
+          } else cookies = [String(obj.cookies)];
+        }
+
+        // Normalize headers: we keep values as-is (string or array)
+        const headersOut = Object.assign({}, headers, obj.headers || {});
+
+        // Normalize body into Buffer (preserve Buffer if provided)
+        let bodyVal = obj.body ?? '';
+        let bodyBuf;
+        if (Buffer.isBuffer(bodyVal)) bodyBuf = bodyVal;
+        else if (typeof bodyVal === 'string') bodyBuf = Buffer.from(bodyVal, 'utf8');
+        else if (typeof bodyVal === 'object') {
+          try { bodyBuf = Buffer.from(JSON.stringify(bodyVal), 'utf8'); }
+          catch { bodyBuf = Buffer.from(String(bodyVal), 'utf8'); }
+        } else {
+          bodyBuf = Buffer.from(String(bodyVal), 'utf8');
+        }
+
+        // If headersOut contains Set-Cookie but cookies array is provided, remove duplicates
+        if (cookies.length > 0) {
+          for (const k of Object.keys(headersOut)) {
+            if (k.toLowerCase() === 'set-cookie') {
+              delete headersOut[k];
+              break;
+            }
+          }
+        }
+
+        // Prepare JSON strings or null for native call
+        const headersJson = Object.keys(headersOut).length ? JSON.stringify(headersOut) : null;
+        const cookiesJson = cookies.length ? JSON.stringify(cookies) : null;
+
+        try {
+          // call new native signature
+          respond(String(reqId), Number(obj.status ?? 200) || 200, headersJson, cookiesJson, bodyBuf);
+        } catch (e) {
+          console.error('respond failed', e);
+        }
         this._sent = true;
       },
       send(a = 200, b = {}, c = [], d = '') {
@@ -108,7 +145,7 @@ function createApp() {
       setHeader(k, v) { headers[k] = v; },
       appendHeader(k, v) {
         const cur = headers[k];
-        if (!cur) headers[k] = v;
+        if (cur === undefined) headers[k] = v;
         else if (Array.isArray(cur)) headers[k] = cur.concat(v);
         else headers[k] = [cur].concat(v);
       }
@@ -203,7 +240,8 @@ function createApp() {
 
       if (shuttingDown) {
         try {
-          respond(String(reqId), JSON.stringify({ status: 503, headers: { 'Content-Type': 'text/plain' }, body: 'Server shutting down' }));
+          // use new native signature for shutdown response
+          respond(String(reqId), 503, JSON.stringify({ 'Content-Type': 'text/plain' }), null, Buffer.from('Server shutting down'));
         } catch (_) { }
         return '';
       }
@@ -316,8 +354,9 @@ function createApp() {
     });
   }
 
-  function listen(host, port, cb) {
-    if (host && port) startServer(host, port);
+  // Enable Rust's Tokio-Multi-threaded Runtime optional false by default
+  function listen(host, port, cb, multicore = false) {
+    if (host && port) startServer(host, port, multicore);
     else startServer();
     listening = true;
     attachNative();
@@ -357,5 +396,9 @@ module.exports = {
   getJsResponseTimeout,
   getMaxBodyBytes,
   setMaxBodyBytes,
-  setJsResponseTimeout
+  setJsResponseTimeout,
+  registerRustHotpath,
+  listRustHotpaths,
+  removeRustHotpath,
+  clearRustHotpaths
 };
