@@ -316,7 +316,10 @@ app.use((req,res,next)=>{
       <h2>Routes</h2>
       <pre><code class="language-js" id="routes">
 app.get("/hi",(req,res)=>res.json({msg:"Hello from Brahma"}));
-app.post("/echo",(req,res)=>res.json(JSON.parse(req.body||"{}")));
+app.get("/page", (req,res)=>res.html(`<h1>Hello HTML</h1>`))
+app.get("/text", (req,res)=>res.text(`Hi plain text`))
+app.get("/status", (req,res)=>res.send(201))
+app.post("/echo",(req,res)=>res.json((req.body.toString('utf-8')||"{}")));
 </code><button class="copy-btn" data-target="routes">Copy</button></pre>
     </section>
 
